@@ -33,10 +33,47 @@ GPixel colorToPixel(const GColor& color) {
 }
 
 
+/**
+ * Multiply bytes the same way numbers in the range [0.0 ... 1.0] are
+ * multiplied.
+ */
+int multiplyBytes(int x, int y) {
+    int result = x * y;
+
+    return (result + 127) / 255;
+}
+
+
+/**
+ * Blend two pixels together using the SrcOver method.
+ */
+GPixel blend(const GPixel& source, const GPixel& dest) {
+    int sAlpha = GPixel_GetA(source);
+    int sRed = GPixel_GetR(source);
+    int sGreen = GPixel_GetG(source);
+    int sBlue = GPixel_GetB(source);
+
+    int dAlpha = GPixel_GetA(dest);
+    int dRed = GPixel_GetR(dest);
+    int dGreen = GPixel_GetG(dest);
+    int dBlue = GPixel_GetB(dest);
+
+    int alpha = sAlpha + multiplyBytes(255 - sAlpha, dAlpha);
+    int red = sRed + multiplyBytes(255 - sAlpha, dRed);
+    int green = sGreen + multiplyBytes(255 - sAlpha, dGreen);
+    int blue = sBlue + multiplyBytes(255 - sAlpha, dBlue);
+
+    return GPixel_PackARGB(alpha, red, green, blue);
+}
+
+
 class MyCanvas : public GCanvas {
 public:
     MyCanvas(const GBitmap& device) : fDevice(device) {}
 
+    /**
+     * Clear a canvas by filling it with a single color.
+     */
     void clear(const GColor& color) override {
         GPixel pixel = colorToPixel(color);
 
@@ -48,44 +85,27 @@ public:
         }
     }
 
+    /**
+     * Fill a rectangular area by blending the existing pixels with the
+     * provided color.
+     */
     void fillRect(const GRect& rect, const GColor& color) override {
-        std::cout << "Initial Rectangle: (" << rect.fLeft << ", " << rect.fTop << ", " << rect.fRight << ", " << rect.fBottom << ")\n";
-
         GIRect rounded = rect.round();
 
+        // Limit the rectangle's area to the boundaries of the canvas.
         rounded.fLeft = std::max(rounded.fLeft, 0);
         rounded.fTop = std::max(rounded.fTop, 0);
         rounded.fRight = std::min(rounded.fRight, fDevice.width());
         rounded.fBottom = std::min(rounded.fBottom, fDevice.height());
 
-        std::cout << "Rounded Rectangle: (" << rounded.fLeft << ", " << rounded.fTop << ", " << rounded.fRight << ", " << rounded.fBottom << ")\n";
-
-        GPixel pixel = colorToPixel(color);
-
-        std::cout << "Pixel Components: " << GPixel_GetA(pixel) << ", " << GPixel_GetR(pixel) << ", " << GPixel_GetG(pixel) << ", " << GPixel_GetB(pixel) << "\n";
+        GPixel source = colorToPixel(color);
 
         for (int y = rounded.fTop; y < rounded.fBottom; ++y) {
             for (int x = rounded.fLeft; x < rounded.fRight; ++x) {
                 GPixel* addr = fDevice.getAddr(x, y);
-
                 GPixel dest = *addr;
 
-                int sAlpha = GPixel_GetA(pixel);
-                int sRed = GPixel_GetR(pixel);
-                int sGreen = GPixel_GetG(pixel);
-                int sBlue = GPixel_GetB(pixel);
-
-                int dAlpha = GPixel_GetA(dest);
-                int dRed = GPixel_GetR(dest);
-                int dGreen = GPixel_GetG(dest);
-                int dBlue = GPixel_GetB(dest);
-
-                int alpha = sAlpha + ((255 - sAlpha) * dAlpha + 127) / 255;
-                int red = sRed + ((255 - sAlpha) * dRed + 127) / 255;
-                int blue = sBlue + ((255 - sAlpha) * dBlue + 127) / 255;
-                int green = sGreen + ((255 - sAlpha) * dGreen + 127) / 255;
-
-                *addr = GPixel_PackARGB(alpha, red, green, blue);
+                *addr = blend(source, dest);
             }
         }
     }
