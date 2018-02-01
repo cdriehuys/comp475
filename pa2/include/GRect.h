@@ -72,6 +72,13 @@ public:
     bool contains(T x, T y) const {
         return fLeft <= x && x < fRight && fTop <= y && y < fBottom;
     }
+
+    void offset(T dx, T dy) {
+        fLeft   += dx;
+        fTop    += dy;
+        fRight  += dx;
+        fBottom += dy;
+    }
 };
 
 class GIRect : public GTRect<int32_t> {

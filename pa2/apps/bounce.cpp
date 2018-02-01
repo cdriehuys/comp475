@@ -75,7 +75,7 @@ struct Shape {
     }
 
     void draw(GCanvas* canvas) const {
-        canvas->fillConvexPolygon(fPts, fCount, fColor);
+        canvas->drawConvexPolygon(fPts, fCount, GPaint(fColor));
     }
 };
 

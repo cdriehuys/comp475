@@ -11,24 +11,6 @@
 #include "GRect.h"
 #include <string>
 
-static void draw_tri(GCanvas* canvas) {
-    GPoint pts[] = {
-        { 10, 10 },
-        { 200, 50 },
-        { 100, 200 },
-    };
-    canvas->drawConvexPolygon(pts, GARRAY_COUNT(pts), GPaint({1, 0, 1, 0}));
-}
-
-static void draw_tri_clipped(GCanvas* canvas) {
-    GPoint pts[] = {
-        { -10, -10 },
-        { 300, 50 },
-        { 100, 300 },
-    };
-    canvas->drawConvexPolygon(pts, GARRAY_COUNT(pts), GPaint({1, 1, 1, 0}));
-}
-
 static void make_regular_poly(GPoint pts[], int count, float cx, float cy, float radius) {
     float angle = 0;
     const float deltaAngle = M_PI * 2 / count;
@@ -80,23 +62,71 @@ static void draw_line(GCanvas* canvas, GPoint a, GPoint b, float width, const GC
     canvas->drawConvexPolygon(pts, 4, GPaint(color));
 }
 
-static void draw_poly_rotate(GCanvas* canvas) {
-    const GPoint start = GPoint::Make(20, 20);
-    const float scale = 200;
+////////////////////////////////////////////////////////////////////////////////////
 
-    const int N = 10;
-    GColor color = GColor::MakeARGB(1, 1, 0, 0);
-    const float deltaR = -1.0 / N;
-    const float deltaB = 1.0 / N;
+static void outer_frame(GCanvas* canvas, const GRect& r) {
+    GPaint paint;
+    canvas->drawRect(GRect::MakeXYWH(r.fLeft - 2, r.fTop - 2, 1, r.height() + 4), paint);
+    canvas->drawRect(GRect::MakeXYWH(r.fRight + 1, r.fTop - 2, 1, r.height() + 4), paint);
+    canvas->drawRect(GRect::MakeXYWH(r.fLeft - 1, r.fTop - 2, r.width() + 2, 1), paint);
+    canvas->drawRect(GRect::MakeXYWH(r.fLeft - 1, r.fBottom + 1, r.width() + 2, 1), paint);
+}
 
-    const float width = 10;
+// so we test the polygon code
+static GPoint* rect_pts(const GRect& r, GPoint pts[]) {
+    pts[0] = { r.fLeft,  r.fTop };
+    pts[1] = { r.fRight, r.fTop };
+    pts[2] = { r.fRight, r.fBottom };
+    pts[3] = { r.fLeft,  r.fBottom };
+    return pts;
+}
 
-    for (float angle = 0; angle <= M_PI/2; angle += M_PI/2/N) {
-        GPoint end = GPoint::Make(start.fX + cos(angle) * scale,
-                                  start.fY + sin(angle) * scale);
-        draw_line(canvas, start, end, width, color);
+static void draw_mode_sample(GCanvas* canvas, const GRect& bounds, GBlendMode mode) {
+    const float dx = bounds.width() / 3;
+    const float dy = bounds.height() / 3;
 
-        color.fR += deltaR;
-        color.fB += deltaB;
+    outer_frame(canvas, bounds);
+
+    GPaint paint;
+    GPoint pts[4];
+
+    // dst is red
+    paint.setBlendMode(GBlendMode::kSrc);
+    GRect r = bounds;
+    r.fBottom = r.fTop + dy;
+    canvas->drawConvexPolygon(rect_pts(r, pts), 4, paint.setColor({0, 0, 0, 0}));
+    r.offset(0, dy);
+    canvas->drawConvexPolygon(rect_pts(r, pts), 4, paint.setColor({0.5, 1, 0, 0}));
+    r.offset(0, dy);
+    canvas->drawConvexPolygon(rect_pts(r, pts), 4, paint.setColor({1, 1, 0, 0}));
+
+    // src is blue
+    paint.setBlendMode(mode);
+    r = bounds;
+    r.fRight = r.fLeft + dx;
+    canvas->drawRect(r, paint.setColor({0, 0, 0, 0}));
+    r.offset(dx, 0);
+    canvas->drawRect(r, paint.setColor({0.5, 0, 0, 1}));
+    r.offset(dx, 0);
+    canvas->drawRect(r, paint.setColor({1, 0, 0, 1}));
+}
+
+static void draw_blendmodes(GCanvas* canvas) {
+    canvas->clear({1,1,1,1});
+
+    const float W = 100;
+    const float H = 100;
+    const float margin = 10;
+    float x = margin;
+    float y = margin;
+    for (int i = 0; i < 12; ++i) {
+        GBlendMode mode = static_cast<GBlendMode>((i + 1) % 12);
+        draw_mode_sample(canvas, GRect::MakeXYWH(x, y, W, H), mode);
+        if (i % 4 == 3) {
+            y += H + margin;
+            x = margin;
+        } else {
+            x += W + margin;
+        }
     }
 }

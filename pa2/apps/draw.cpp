@@ -128,7 +128,7 @@ static void make_regular_poly(GPoint pts[], int count, float cx, float cy, float
 
 class ConvexShape : public Shape {
 public:
-    ConvexShape(GColor c, int sides) : fColor(c), fN(sides) {
+    ConvexShape(GColor c, int sides) : fPaint(c), fN(sides) {
         fBounds.setXYWH(100, 100, 150, 150);
     }
 
@@ -140,17 +140,17 @@ public:
 
         GPoint* pts = new GPoint[fN];
         make_regular_poly(pts, fN, cx, cy, sx, sy);
-        canvas->fillConvexPolygon(pts, fN, fColor);
+        canvas->drawConvexPolygon(pts, fN, fPaint);
         delete[] pts;
     }
     
     GRect getRect() override { return fBounds; }
     void setRect(const GRect& r) override { fBounds = r; }
-    GColor getColor() override { return fColor; }
-    void setColor(const GColor& c) override { fColor = c; }
+    GColor getColor() override { return fPaint.getColor(); }
+    void setColor(const GColor& c) override { fPaint.setColor(c); }
 
 private:
-    GColor  fColor;
+    GPaint  fPaint;
     int     fN;
     GRect   fBounds;
 };

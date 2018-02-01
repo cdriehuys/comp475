@@ -42,13 +42,6 @@ static void draw_solid_ramp(GCanvas* canvas) {
     }
 }
 
-static void offset(GRect* r, float dx, float dy) {
-    r->fLeft += dx;
-    r->fRight += dx;
-    r->fTop += dy;
-    r->fBottom += dy;
-}
-
 static void draw_blend_ramp(GCanvas* canvas, const GColor& bg) {
     GRect rect = GRect::MakeXYWH(-25, -25, 70, 70);
 
@@ -59,7 +52,7 @@ static void draw_blend_ramp(GCanvas* canvas, const GColor& bg) {
         float b = fabs(sin(i/50.0));
         GColor color = GColor::MakeARGB(0.3, r, g, b);
         canvas->fillRect(rect, color);
-        offset(&rect, delta, delta);
+        rect.offset(delta, delta);
     }
 }
 

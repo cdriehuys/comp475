@@ -28,15 +28,16 @@ public:
     GPaint(const GColor& c) : fColor(c) {}
 
     const GColor& getColor() const { return fColor; }
-    void setColor(GColor c) { fColor = c; }
+    GPaint& setColor(GColor c) { fColor = c; return *this; }
 
     float getAlpha() const { return fColor.fA; }
-    void setAlpha(float alpha) {
+    GPaint& setAlpha(float alpha) {
         fColor.fA = alpha;
+        return *this;
     }
 
     GBlendMode  getBlendMode() const { return fMode; }
-    void setBlendMode(GBlendMode m) { fMode = m; }
+    GPaint& setBlendMode(GBlendMode m) { fMode = m; return *this; }
 
 private:
     GColor      fColor;
