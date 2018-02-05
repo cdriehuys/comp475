@@ -10,22 +10,22 @@ static inline int multiplyBytes(int x, int y) {
 }
 
 
-static inline GPixel Blend_Clear(const GPixel& source, const GPixel& dest) {
+static inline GPixel Blend_Clear(const GPixel source, const GPixel dest) {
     return GPixel_PackARGB(0, 0, 0, 0);
 }
 
 
-static inline GPixel Blend_Src(const GPixel& source, const GPixel& dest) {
+static inline GPixel Blend_Src(const GPixel source, const GPixel dest) {
     return source;
 }
 
 
-static inline GPixel Blend_Dst(const GPixel& source, const GPixel& dest) {
+static inline GPixel Blend_Dst(const GPixel source, const GPixel dest) {
     return dest;
 }
 
 
-static inline GPixel Blend_SrcOver(const GPixel& source, const GPixel& dest) {
+static inline GPixel Blend_SrcOver(const GPixel source, const GPixel dest) {
     int sAlpha = GPixel_GetA(source);
     int sRed = GPixel_GetR(source);
     int sGreen = GPixel_GetG(source);
@@ -45,7 +45,7 @@ static inline GPixel Blend_SrcOver(const GPixel& source, const GPixel& dest) {
 }
 
 
-static inline GPixel Blend_DstOver(const GPixel& source, const GPixel& dest) {
+static inline GPixel Blend_DstOver(const GPixel source, const GPixel dest) {
     int sAlpha = GPixel_GetA(source);
     int sRed = GPixel_GetR(source);
     int sGreen = GPixel_GetG(source);
@@ -65,7 +65,7 @@ static inline GPixel Blend_DstOver(const GPixel& source, const GPixel& dest) {
 }
 
 
-static inline GPixel Blend_SrcIn(const GPixel& source, const GPixel& dest) {
+static inline GPixel Blend_SrcIn(const GPixel source, const GPixel dest) {
     int sAlpha = GPixel_GetA(source);
     int sRed = GPixel_GetR(source);
     int sGreen = GPixel_GetG(source);
@@ -85,7 +85,7 @@ static inline GPixel Blend_SrcIn(const GPixel& source, const GPixel& dest) {
 }
 
 
-static inline GPixel Blend_DstIn(const GPixel& source, const GPixel& dest) {
+static inline GPixel Blend_DstIn(const GPixel source, const GPixel dest) {
     int sAlpha = GPixel_GetA(source);
     int sRed = GPixel_GetR(source);
     int sGreen = GPixel_GetG(source);
