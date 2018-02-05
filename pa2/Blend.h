@@ -105,6 +105,106 @@ static inline GPixel Blend_DstIn(const GPixel& source, const GPixel& dest) {
 }
 
 
+static inline GPixel Blend_SrcOut(const GPixel source, const GPixel dest) {
+    int sAlpha = GPixel_GetA(source);
+    int sRed = GPixel_GetR(source);
+    int sGreen = GPixel_GetG(source);
+    int sBlue = GPixel_GetB(source);
+
+    int dAlpha = GPixel_GetA(dest);
+    int dRed = GPixel_GetR(dest);
+    int dGreen = GPixel_GetG(dest);
+    int dBlue = GPixel_GetB(dest);
+
+    int alpha = multiplyBytes(sAlpha, (255 - dAlpha));
+    int red = multiplyBytes(255 - dAlpha, sRed);
+    int green = multiplyBytes(255 - dAlpha, sGreen);
+    int blue = multiplyBytes(255 - dAlpha, sBlue);
+
+    return GPixel_PackARGB(alpha, red, green, blue);
+}
+
+
+static inline GPixel Blend_DstOut(const GPixel source, const GPixel dest) {
+    int sAlpha = GPixel_GetA(source);
+    int sRed = GPixel_GetR(source);
+    int sGreen = GPixel_GetG(source);
+    int sBlue = GPixel_GetB(source);
+
+    int dAlpha = GPixel_GetA(dest);
+    int dRed = GPixel_GetR(dest);
+    int dGreen = GPixel_GetG(dest);
+    int dBlue = GPixel_GetB(dest);
+
+    int alpha = multiplyBytes(dAlpha, (255 - sAlpha));
+    int red = multiplyBytes(255 - sAlpha, dRed);
+    int green = multiplyBytes(255 - sAlpha, dGreen);
+    int blue = multiplyBytes(255 - sAlpha, dBlue);
+
+    return GPixel_PackARGB(alpha, red, green, blue);
+}
+
+
+static inline GPixel Blend_SrcATop(const GPixel source, const GPixel dest) {
+    int sAlpha = GPixel_GetA(source);
+    int sRed = GPixel_GetR(source);
+    int sGreen = GPixel_GetG(source);
+    int sBlue = GPixel_GetB(source);
+
+    int dAlpha = GPixel_GetA(dest);
+    int dRed = GPixel_GetR(dest);
+    int dGreen = GPixel_GetG(dest);
+    int dBlue = GPixel_GetB(dest);
+
+    int alpha = dAlpha;
+    int red = multiplyBytes(dAlpha, sRed) + multiplyBytes(255 - sAlpha, dRed);
+    int green = multiplyBytes(dAlpha, sGreen) + multiplyBytes(255 - sAlpha, dGreen);
+    int blue = multiplyBytes(dAlpha, sBlue) + multiplyBytes(255 - sAlpha, dBlue);
+
+    return GPixel_PackARGB(alpha, red, green, blue);
+}
+
+
+static inline GPixel Blend_DstATop(const GPixel source, const GPixel dest) {
+    int sAlpha = GPixel_GetA(source);
+    int sRed = GPixel_GetR(source);
+    int sGreen = GPixel_GetG(source);
+    int sBlue = GPixel_GetB(source);
+
+    int dAlpha = GPixel_GetA(dest);
+    int dRed = GPixel_GetR(dest);
+    int dGreen = GPixel_GetG(dest);
+    int dBlue = GPixel_GetB(dest);
+
+    int alpha = sAlpha;
+    int red = multiplyBytes(sAlpha, dRed) + multiplyBytes(255 - dAlpha, sRed);
+    int green = multiplyBytes(sAlpha, dGreen) + multiplyBytes(255 - dAlpha, sGreen);
+    int blue = multiplyBytes(sAlpha, dBlue) + multiplyBytes(255 - dAlpha, sBlue);
+
+    return GPixel_PackARGB(alpha, red, green, blue);
+}
+
+
+static inline GPixel Blend_Xor(const GPixel source, const GPixel dest) {
+    int sAlpha = GPixel_GetA(source);
+    int sRed = GPixel_GetR(source);
+    int sGreen = GPixel_GetG(source);
+    int sBlue = GPixel_GetB(source);
+
+    int dAlpha = GPixel_GetA(dest);
+    int dRed = GPixel_GetR(dest);
+    int dGreen = GPixel_GetG(dest);
+    int dBlue = GPixel_GetB(dest);
+
+    int alpha = sAlpha + dAlpha - 2 * multiplyBytes(sAlpha, dAlpha);
+    int red = multiplyBytes(255 - dAlpha, sRed) + multiplyBytes(255 - sAlpha, dRed);
+    int green = multiplyBytes(255 - dAlpha, sGreen) + multiplyBytes(255 - sAlpha, dGreen);
+    int blue = multiplyBytes(255 - dAlpha, sBlue) + multiplyBytes(255 - sAlpha, dBlue);
+
+    return GPixel_PackARGB(alpha, red, green, blue);
+}
+
+
 typedef GPixel (*BlendProc)(GPixel, GPixel);
 
 
@@ -118,6 +218,11 @@ BlendProc BLEND_PROCS = {
     Blend_DstOver,
     Blend_SrcIn,
     Blend_DstIn,
+    Blend_SrcOut,
+    Blend_DstOut,
+    Blend_SrcATop,
+    Blend_DstATop,
+    Blend_Xor,
 };
 
 #endif
