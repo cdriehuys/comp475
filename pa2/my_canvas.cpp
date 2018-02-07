@@ -4,6 +4,8 @@
 #include "GPixel.h"
 #include "GRect.h"
 
+#include "Blend.h"
+
 
 /**
  * Convert a float in the range [0.0 ... 1.0] to an 8-bit integer.
@@ -26,40 +28,6 @@ GPixel colorToPixel(const GColor& color) {
     int red   = floatToPixelValue(color.fR * color.fA);
     int green = floatToPixelValue(color.fG * color.fA);
     int blue  = floatToPixelValue(color.fB * color.fA);
-
-    return GPixel_PackARGB(alpha, red, green, blue);
-}
-
-
-/**
- * Multiply bytes the same way numbers in the range [0.0 ... 1.0] are
- * multiplied.
- */
-int multiplyBytes(int x, int y) {
-    int result = x * y;
-
-    return (result + 127) / 255;
-}
-
-
-/**
- * Blend two pixels together using the SrcOver method.
- */
-GPixel blend(const GPixel& source, const GPixel& dest) {
-    int sAlpha = GPixel_GetA(source);
-    int sRed = GPixel_GetR(source);
-    int sGreen = GPixel_GetG(source);
-    int sBlue = GPixel_GetB(source);
-
-    int dAlpha = GPixel_GetA(dest);
-    int dRed = GPixel_GetR(dest);
-    int dGreen = GPixel_GetG(dest);
-    int dBlue = GPixel_GetB(dest);
-
-    int alpha = sAlpha + multiplyBytes(255 - sAlpha, dAlpha);
-    int red = sRed + multiplyBytes(255 - sAlpha, dRed);
-    int green = sGreen + multiplyBytes(255 - sAlpha, dGreen);
-    int blue = sBlue + multiplyBytes(255 - sAlpha, dBlue);
 
     return GPixel_PackARGB(alpha, red, green, blue);
 }
@@ -108,12 +76,14 @@ public:
 
         GPixel source = colorToPixel(color);
 
+        BlendProc blendProc = getBlendProc(paint.getBlendMode(), source);
+
         for (int y = rounded.fTop; y < rounded.fBottom; ++y) {
             for (int x = rounded.fLeft; x < rounded.fRight; ++x) {
                 GPixel* addr = fDevice.getAddr(x, y);
                 GPixel dest = *addr;
 
-                *addr = blend(source, dest);
+                *addr = blendProc(source, dest);
             }
         }
     }

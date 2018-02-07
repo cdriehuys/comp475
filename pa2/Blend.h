@@ -1,6 +1,7 @@
 #ifndef Blend_DEFINED
 #define Blend_DEFINED
 
+#include "GPaint.h"
 #include "GPixel.h"
 
 static inline int multiplyBytes(int x, int y) {
@@ -210,7 +211,7 @@ typedef GPixel (*BlendProc)(GPixel, GPixel);
 
 // If this matches the order of the GBlendMode enum, we can use the enum values
 // as indices for this array.
-BlendProc BLEND_PROCS = {
+BlendProc BLEND_PROCS[] = {
     Blend_Clear,
     Blend_Src,
     Blend_Dst,
@@ -224,5 +225,10 @@ BlendProc BLEND_PROCS = {
     Blend_DstATop,
     Blend_Xor,
 };
+
+
+static inline BlendProc getBlendProc(const GBlendMode mode, const GPixel src) {
+    return BLEND_PROCS[static_cast<int>(mode)];
+}
 
 #endif
