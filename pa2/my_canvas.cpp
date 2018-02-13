@@ -78,6 +78,15 @@ Edge* makeEdge(GPoint p0, GPoint p1) {
 }
 
 
+void project(float x, float y1, float y2, std::deque<Edge>& results) {
+    Edge* projected = makeEdge(GPoint::Make(x, y1), GPoint::Make(x, y2));
+
+    if (projected != nullptr) {
+        results.push_back(*projected);
+    }
+}
+
+
 void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
     GPoint p0, p1;
 
@@ -118,12 +127,7 @@ void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
     // If we're entirely outside the left edge, we simply add the projection of
     // the edge onto the left bound.
     if (p1.x() <= bounds.left()) {
-        Edge* projected = makeEdge(
-            GPoint::Make(bounds.left(), p0.y()),
-            GPoint::Make(bounds.left(), p1.y()));
-        if (projected != nullptr) {
-            results.push_back(*projected);
-        }
+        project(bounds.left(), p0.y(), p1.y(), results);
 
         return;
     }
@@ -131,38 +135,21 @@ void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
     // Similarly, if we're entirely outside the right edge, we only add the
     // projection back onto the right bound.
     if (p0.x() >= bounds.right()) {
-        Edge* projected = makeEdge(
-            GPoint::Make(bounds.right(), p0.y()),
-            GPoint::Make(bounds.right(), p1.y()));
-        if (projected != nullptr) {
-            results.push_back(*projected);
-        }
+        project(bounds.right(), p0.y(), p1.y(), results);
+
+        return;
     }
 
     if (p0.x() < bounds.left()) {
         float newY = p0.y() + (bounds.left() - p0.x()) * (p1.y() - p0.y()) / (p1.x() - p0.x());
-
-        // Make the projected edge
-        Edge* projected = makeEdge(
-            GPoint::Make(bounds.left(), p0.y()),
-            GPoint::Make(bounds.left(), newY));
-        if (projected != nullptr) {
-            results.push_back(*projected);
-        }
+        project(bounds.left(), p0.y(), newY, results);
 
         p0.set(bounds.left(), newY);
     }
 
     if (p1.x() > bounds.right()) {
         float newY = p1.y() - (p1.x() - bounds.right()) * (p1.y() - p0.y()) / (p1.x() - p0.x());
-
-        // Make the projected edge
-        Edge* projected = makeEdge(
-            GPoint::Make(bounds.right(), p1.y()),
-            GPoint::Make(bounds.right(), newY));
-        if (projected != nullptr) {
-            results.push_back(*projected);
-        }
+        project(bounds.right(), newY, p1.y(), results);
 
         p1.set(bounds.right(), newY);
     }
