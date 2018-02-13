@@ -1,5 +1,4 @@
-#include <iostream>
-#include <vector>
+#include <deque>
 
 #include "GBitmap.h"
 #include "GCanvas.h"
@@ -79,7 +78,7 @@ Edge* makeEdge(GPoint p0, GPoint p1) {
 }
 
 
-void clip(GPoint p0_, GPoint p1_, GRect bounds, std::vector<Edge>& results) {
+void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
     GPoint p0, p1;
 
     // Sort points based on y-coordinate
@@ -104,7 +103,7 @@ void clip(GPoint p0_, GPoint p1_, GRect bounds, std::vector<Edge>& results) {
     }
 
     if (p1.y() > bounds.bottom()) {
-        float newX = p1.x() - (p1.x() - p0.x()) * (bounds.top() - p0.y()) / (p1.y() - p0.y());
+        float newX = p1.x() - (p1.x() - p0.x()) * (p1.y() - bounds.bottom()) / (p1.y() - p0.y());
 
         p1.set(newX, bounds.bottom());
     }
@@ -114,6 +113,30 @@ void clip(GPoint p0_, GPoint p1_, GRect bounds, std::vector<Edge>& results) {
         GPoint temp = p0;
         p0 = p1;
         p1 = temp;
+    }
+
+    // If we're entirely outside the left edge, we simply add the projection of
+    // the edge onto the left bound.
+    if (p1.x() <= bounds.left()) {
+        Edge* projected = makeEdge(
+            GPoint::Make(bounds.left(), p0.y()),
+            GPoint::Make(bounds.left(), p1.y()));
+        if (projected != nullptr) {
+            results.push_back(*projected);
+        }
+
+        return;
+    }
+
+    // Similarly, if we're entirely outside the right edge, we only add the
+    // projection back onto the right bound.
+    if (p0.x() >= bounds.right()) {
+        Edge* projected = makeEdge(
+            GPoint::Make(bounds.right(), p0.y()),
+            GPoint::Make(bounds.right(), p1.y()));
+        if (projected != nullptr) {
+            results.push_back(*projected);
+        }
     }
 
     if (p0.x() < bounds.left()) {
@@ -184,7 +207,7 @@ public:
      */
     void drawConvexPolygon(const GPoint points[], int count, const GPaint& paint) override {
         GRect bounds = GRect::MakeWH(fDevice.width(), fDevice.height());
-        std::vector<Edge> edges;
+        std::deque<Edge> edges;
 
         for (int i = 0; i < count; ++i) {
             GPoint p0 = points[i];
@@ -204,27 +227,26 @@ public:
 
         GASSERT(edges.size() >= 2);
 
-        Edge left = edges[0];
-        Edge right = edges[1];
+        int lastY = edges.back().bottomY;
 
-        int next = 2;
+        Edge left = edges.front();
+        edges.pop_front();
+
+        Edge right = edges.front();
+        edges.pop_front();
 
         float curY = left.topY;
 
         float leftX = left.curX;
         float rightX = right.curX;
 
-        while (curY <= edges.back().bottomY) {
+        while (curY <= lastY) {
             GRect row = GRect::MakeLTRB(leftX, curY, rightX, curY + 1);
             drawRect(row, paint);
 
             if (curY >= left.bottomY) {
-                left = edges[next];
-                next++;
-
-                if (next == edges.size()) {
-                    break;
-                }
+                left = edges.front();
+                edges.pop_front();
 
                 leftX = left.curX;
             } else {
@@ -232,8 +254,8 @@ public:
             }
 
             if (curY >= right.bottomY) {
-                right = edges[next];
-                next++;
+                right = edges.front();
+                edges.pop_front();
 
                 rightX = right.curX;
             } else {
