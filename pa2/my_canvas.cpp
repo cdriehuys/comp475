@@ -10,6 +10,9 @@
 #include "Blend.h"
 
 
+/**
+ * Round a float to the nearest integer.
+ */
 int round(float value) {
     return floor(value + 0.5);
 }
@@ -41,6 +44,10 @@ GPixel colorToPixel(const GColor& color) {
 }
 
 
+/**
+ * An edge contains information about a line segment. It contains the minimum
+ * amount of information necessary for our scan converter.
+ */
 struct Edge {
     int topY;
     int bottomY;
@@ -49,7 +56,14 @@ struct Edge {
 };
 
 
+/**
+ * Create an edge between two points.
+ *
+ * If the created edge is not useful, a nullptr is returned. Otherwise, a
+ * pointer to the created edge is returned.
+ */
 Edge* makeEdge(GPoint p0, GPoint p1) {
+    // Ensure that p0.y <= p1.y is true
     if (p0.y() > p1.y()) {
         GPoint temp = p1;
         p1 = p0;
@@ -59,10 +73,13 @@ Edge* makeEdge(GPoint p0, GPoint p1) {
     int topY = round(p0.y());
     int bottomY = round(p1.y());
 
+    // If the edge doesn't cross any pixel centers vertically, it can be
+    // ignored.
     if (topY == bottomY) {
         return nullptr;
     }
 
+    // Our slope is really dx/dy for the purposes of our scan converter.
     float slope = (p1.x() - p0.x()) / (p1.y() - p0.y());
 
     float deltaY = floor(p0.y()) - p0.y() + .5;
@@ -78,6 +95,9 @@ Edge* makeEdge(GPoint p0, GPoint p1) {
 }
 
 
+/**
+ * Creates an edge that is the projection of two points onto a vertical axis.
+ */
 void project(float x, float y1, float y2, std::deque<Edge>& results) {
     Edge* projected = makeEdge(GPoint::Make(x, y1), GPoint::Make(x, y2));
 
@@ -87,16 +107,15 @@ void project(float x, float y1, float y2, std::deque<Edge>& results) {
 }
 
 
-void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
-    GPoint p0, p1;
-
-    // Sort points based on y-coordinate
-    if (p0_.y() > p1_.y()) {
-        p0 = p1_;
-        p1 = p0_;
-    } else {
-        p0 = p0_;
-        p1 = p1_;
+/**
+ * Clip the line segment between two points into up to 3 edges.
+ */
+void clip(GPoint p0, GPoint p1, GRect bounds, std::deque<Edge>& results) {
+    // Ensure p0.y <= p1.y
+    if (p0.y() > p1.y()) {
+        GPoint temp = p0;
+        p0 = p1;
+        p1 = temp;
     }
 
     // We can discard edges that are completely out of the clipping region in
@@ -105,19 +124,21 @@ void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
         return;
     }
 
+    // Handle clipping the top boundary
     if (p0.y() < bounds.top()) {
         float newX = p0.x() + (p1.x() - p0.x()) * (bounds.top() - p0.y()) / (p1.y() - p0.y());
 
         p0.set(newX, bounds.top());
     }
 
+    // Clip the bottom boundary
     if (p1.y() > bounds.bottom()) {
         float newX = p1.x() - (p1.x() - p0.x()) * (p1.y() - bounds.bottom()) / (p1.y() - p0.y());
 
         p1.set(newX, bounds.bottom());
     }
 
-    // Sort points by x-coordinate
+    // Ensure p0.x <= p1.x
     if (p0.x() > p1.x()) {
         GPoint temp = p0;
         p0 = p1;
@@ -140,6 +161,7 @@ void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
         return;
     }
 
+    // Handle clipping and projection onto the left boundary
     if (p0.x() < bounds.left()) {
         float newY = p0.y() + (bounds.left() - p0.x()) * (p1.y() - p0.y()) / (p1.x() - p0.x());
         project(bounds.left(), p0.y(), newY, results);
@@ -147,6 +169,7 @@ void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
         p0.set(bounds.left(), newY);
     }
 
+    // Handle clipping and projection onto the right boundary
     if (p1.x() > bounds.right()) {
         float newY = p1.y() - (p1.x() - bounds.right()) * (p1.y() - p0.y()) / (p1.x() - p0.x());
         project(bounds.right(), newY, p1.y(), results);
@@ -162,6 +185,15 @@ void clip(GPoint p0_, GPoint p1_, GRect bounds, std::deque<Edge>& results) {
 }
 
 
+/**
+ * A predicate function for sorting two edges.
+ *
+ * Edges are first compared by top y-coordinate, then starting x-coordinate,
+ * and finally their "slope".
+ *
+ * Returns true if the first edge should be sorted before the second edge and
+ * false otherwise.
+ */
 bool isEdgeGreater(Edge e1, Edge e2) {
     if (e1.topY < e2.topY) {
         return true;
@@ -205,8 +237,6 @@ public:
 
         std::sort(edges.begin(), edges.end(), isEdgeGreater);
 
-        // std::cout << "After clipping, " << count << " edge(s) became " << edges.size() << "\n";
-
         // If we clipped all the edges away, we don't have to do anything.
         if (edges.size() == 0) {
             return;
@@ -216,6 +246,7 @@ public:
 
         int lastY = edges.back().bottomY;
 
+        // Set up our initial left and right boundary edges
         Edge left = edges.front();
         edges.pop_front();
 
@@ -227,9 +258,14 @@ public:
         float leftX = left.curX;
         float rightX = right.curX;
 
+        // Loop through all the possible y-coordinates that could be drawn
         while (curY <= lastY) {
             GRect row = GRect::MakeLTRB(leftX, curY, rightX, curY + 1);
             drawRect(row, paint);
+
+            // After drawing, we check to see if we've completed either the
+            // left or right edge. If we have, we replace it with the next
+            // edge.
 
             if (curY >= left.bottomY) {
                 left = edges.front();
