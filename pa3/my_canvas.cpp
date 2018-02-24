@@ -323,7 +323,7 @@ public:
 
         GPixel source = colorToPixel(color);
 
-        BlendProc blendProc = getBlendProc(paint.getBlendMode(), source);
+        BlendProc blendProc = Blend_GetProc(paint.getBlendMode(), source);
 
         for (int y = rounded.fTop; y < rounded.fBottom; ++y) {
             for (int x = rounded.fLeft; x < rounded.fRight; ++x) {
