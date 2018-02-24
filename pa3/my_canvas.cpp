@@ -219,6 +219,10 @@ class MyCanvas : public GCanvas {
 public:
     MyCanvas(const GBitmap& device) : fDevice(device) {}
 
+    void concat(const GMatrix& matrix) override {
+
+    }
+
     /**
      * Draw a convex polygon to the canvas. The polygon is constructed by
      * forming edges between the provided points. The paint determines how the
@@ -329,6 +333,14 @@ public:
                 *addr = blendProc(source, dest);
             }
         }
+    }
+
+    void restore() override {
+
+    }
+
+    void save() override {
+
     }
 
 private:
