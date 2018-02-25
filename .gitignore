@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# Generated Images (But Not Expected Images)
+*.png
+!expected/*.png
+
+# Project Specific Executables
+bench
+image
+tests
