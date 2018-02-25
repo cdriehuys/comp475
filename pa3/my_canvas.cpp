@@ -1,7 +1,10 @@
+#include <stack>
+
 #include "GBitmap.h"
 #include "GCanvas.h"
 #include "GColor.h"
 #include "GMath.h"
+#include "GMatrix.h"
 #include "GPixel.h"
 #include "GPoint.h"
 #include "GRect.h"
@@ -38,10 +41,14 @@ GPixel colorToPixel(const GColor& color) {
 
 class MyCanvas : public GCanvas {
 public:
-    MyCanvas(const GBitmap& device) : fDevice(device) {}
+    MyCanvas(const GBitmap& device) : fDevice(device) {
+        GMatrix identity;
+        identity.setIdentity();
+        mCTMStack.push(identity);
+    }
 
     void concat(const GMatrix& matrix) override {
-
+        mCTMStack.top().preConcat(matrix);
     }
 
     /**
@@ -50,13 +57,16 @@ public:
      * new polygon is drawn with respect to the pixels already on the screen.
      */
     void drawConvexPolygon(const GPoint srcPoints[], int count, const GPaint& paint) override {
+        GPoint points[count];
+        mCTMStack.top().mapPoints(points, srcPoints, count);
+
         GRect bounds = GRect::MakeWH(fDevice.width(), fDevice.height());
         Edge storage[count * 3];
         Edge* edge = storage;
 
         for (int i = 0; i < count; ++i) {
-            GPoint p0 = srcPoints[i];
-            GPoint p1 = srcPoints[(i + 1) % count];
+            GPoint p0 = points[i];
+            GPoint p1 = points[(i + 1) % count];
 
             edge = clipLine(p0, p1, bounds, edge);
         }
@@ -158,15 +168,23 @@ public:
     }
 
     void restore() override {
-
+        mCTMStack.pop();
     }
 
     void save() override {
+        GMatrix current = mCTMStack.top();
+        GMatrix copy;
+        copy.set6(
+            current[0], current[1], current[2],
+            current[3], current[4], current[5]);
 
+        mCTMStack.push(copy);
     }
 
 private:
     const GBitmap fDevice;
+
+    std::stack<GMatrix> mCTMStack;
 };
 
 
