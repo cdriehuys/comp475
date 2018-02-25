@@ -206,6 +206,16 @@ GPixel Blend_Xor(const GPixel source, const GPixel dest) {
 }
 
 
-BlendProc Blend_GetProc(const GBlendMode mode, const GPixel src) {
+BlendProc Blend_GetProc(const GBlendMode mode) {
     return Blend_PROCS[static_cast<int>(mode)];
+}
+
+
+/**
+ * Since we are provided the source pixel in this case, we can make some
+ * optimizations if desired. For now we just take the naive approach and return
+ * the function corresponding to the given mode.
+ */
+BlendProc Blend_GetProc(const GBlendMode mode, const GPixel src) {
+    return Blend_GetProc(mode);
 }

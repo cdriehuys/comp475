@@ -8,6 +8,7 @@
 #include "GPixel.h"
 #include "GPoint.h"
 #include "GRect.h"
+#include "GShader.h"
 
 #include "Blend.h"
 #include "Clipper.h"
@@ -96,9 +97,7 @@ public:
 
         // Loop through all the possible y-coordinates that could be drawn
         while (curY < lastY) {
-            GRect row = GRect::MakeLTRB(leftX, curY, rightX, curY + 1);
-            drawRect(row, paint);
-
+            drawRow(curY, GRoundToInt(leftX), GRoundToInt(rightX), paint);
             curY++;
 
             // After drawing, we check to see if we've completed either the
@@ -144,27 +143,14 @@ public:
      * Draw a rectangular area by filling it with the provided paint.
      */
     void drawRect(const GRect& rect, const GPaint& paint) override {
-        GColor color = paint.getColor().pinToUnit();
-        GIRect rounded = rect.round();
+        GPoint points[4] = {
+            GPoint::Make(rect.left(), rect.top()),
+            GPoint::Make(rect.right(), rect.top()),
+            GPoint::Make(rect.right(), rect.bottom()),
+            GPoint::Make(rect.left(), rect.bottom())
+        };
 
-        // Limit the rectangle's area to the boundaries of the canvas.
-        rounded.fLeft = std::max(rounded.fLeft, 0);
-        rounded.fTop = std::max(rounded.fTop, 0);
-        rounded.fRight = std::min(rounded.fRight, fDevice.width());
-        rounded.fBottom = std::min(rounded.fBottom, fDevice.height());
-
-        GPixel source = colorToPixel(color);
-
-        BlendProc blendProc = Blend_GetProc(paint.getBlendMode(), source);
-
-        for (int y = rounded.fTop; y < rounded.fBottom; ++y) {
-            for (int x = rounded.fLeft; x < rounded.fRight; ++x) {
-                GPixel* addr = fDevice.getAddr(x, y);
-                GPixel dest = *addr;
-
-                *addr = blendProc(source, dest);
-            }
-        }
+        drawConvexPolygon(points, 4, paint);
     }
 
     void restore() override {
@@ -173,8 +159,7 @@ public:
 
     void save() override {
         GMatrix current = mCTMStack.top();
-        GMatrix copy;
-        copy.set6(
+        GMatrix copy(
             current[0], current[1], current[2],
             current[3], current[4], current[5]);
 
@@ -185,6 +170,36 @@ private:
     const GBitmap fDevice;
 
     std::stack<GMatrix> mCTMStack;
+
+    void drawRow(int y, int xLeft, int xRight, const GPaint& paint) {
+        xLeft = std::max(0, xLeft);
+        xRight = std::min(fDevice.width(), xRight);
+
+        BlendProc blendProc = Blend_GetProc(paint.getBlendMode());
+
+        GShader* shader = paint.getShader();
+        if (shader == nullptr) {
+            GColor color = paint.getColor().pinToUnit();
+            GPixel source = colorToPixel(color);
+
+            for (int x = xLeft; x < xRight; ++x) {
+                GPixel* addr = fDevice.getAddr(x, y);
+                *addr = blendProc(source, *addr);
+            }
+        } else {
+            if (!shader->setContext(mCTMStack.top())) {
+                return;
+            }
+
+            GPixel shaded[xRight - xLeft];
+            shader->shadeRow(xLeft, y, xRight - xLeft, shaded);
+
+            for (int x = xLeft; x < xRight; ++x) {
+                GPixel* addr = fDevice.getAddr(x, y);
+                *addr = blendProc(shaded[x - xLeft], *addr);
+            }
+        }
+    }
 };
 
 

@@ -50,6 +50,19 @@ const BlendProc Blend_PROCS[] = {
  * Args:
  *     mode:
  *         The blend mode that tells us which blend function to use.
+ *
+ * Returns:
+ *     A BlendProc, which is a pointer to a blend function.
+ */
+BlendProc Blend_GetProc(const GBlendMode mode);
+
+
+/**
+ * Get the correct blend function for the provided blend mode.
+ *
+ * Args:
+ *     mode:
+ *         The blend mode that tells us which blend function to use.
  *     src:
  *         The source pixel used for the blending operation. We can make
  *         certain optimizations based on the transparency of the source pixel.
@@ -58,5 +71,6 @@ const BlendProc Blend_PROCS[] = {
  *     A BlendProc, which is a pointer to a blend function.
  */
 BlendProc Blend_GetProc(const GBlendMode mode, const GPixel src);
+
 
 #endif

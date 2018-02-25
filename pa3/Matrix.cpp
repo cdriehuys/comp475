@@ -68,8 +68,11 @@ void GMatrix::mapPoints(GPoint dst[], const GPoint src[], int count) const {
     for (int i = 0; i < count; ++i) {
         GPoint point = src[i];
 
-        float x = this->fMat[GMatrix::SX] * point.x() + this->fMat[GMatrix::KX] * point.x() + this->fMat[GMatrix::TX];
-        float y = this->fMat[GMatrix::KY] * point.y() + this->fMat[GMatrix::SY] * point.y() + this->fMat[GMatrix::TY];
+        float x0 = point.x();
+        float y0 = point.y();
+
+        float x = this->fMat[GMatrix::SX] * x0 + this->fMat[GMatrix::KX] * y0 + this->fMat[GMatrix::TX];
+        float y = this->fMat[GMatrix::SY] * y0 + this->fMat[GMatrix::KY] * x0 + this->fMat[GMatrix::TY];
 
         dst[i] = GPoint::Make(x, y);
     }
