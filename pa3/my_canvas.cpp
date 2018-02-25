@@ -1,5 +1,3 @@
-#include <deque>
-
 #include "GBitmap.h"
 #include "GCanvas.h"
 #include "GColor.h"
@@ -38,37 +36,6 @@ GPixel colorToPixel(const GColor& color) {
 }
 
 
-
-/**
- * A predicate function for sorting two edges.
- *
- * Edges are first compared by top y-coordinate, then starting x-coordinate,
- * and finally their "slope".
- *
- * Returns true if the first edge should be sorted before the second edge and
- * false otherwise.
- */
-bool isEdgeGreater(Edge e1, Edge e2) {
-    if (e1.topY < e2.topY) {
-        return true;
-    }
-
-    if (e2.topY < e1.topY) {
-        return false;
-    }
-
-    if (e1.curX < e2.curX) {
-        return true;
-    }
-
-    if (e2.curX < e1.curX) {
-        return false;
-    }
-
-    return e1.slope <= e2.slope;
-}
-
-
 class MyCanvas : public GCanvas {
 public:
     MyCanvas(const GBitmap& device) : fDevice(device) {}
@@ -82,34 +49,35 @@ public:
      * forming edges between the provided points. The paint determines how the
      * new polygon is drawn with respect to the pixels already on the screen.
      */
-    void drawConvexPolygon(const GPoint points[], int count, const GPaint& paint) override {
+    void drawConvexPolygon(const GPoint srcPoints[], int count, const GPaint& paint) override {
         GRect bounds = GRect::MakeWH(fDevice.width(), fDevice.height());
-        std::deque<Edge> edges;
+        Edge storage[count * 3];
+        Edge* edge = storage;
 
         for (int i = 0; i < count; ++i) {
-            GPoint p0 = points[i];
-            GPoint p1 = points[(i + 1) % count];
+            GPoint p0 = srcPoints[i];
+            GPoint p1 = srcPoints[(i + 1) % count];
 
-            clip(p0, p1, bounds, edges);
+            edge = clipLine(p0, p1, bounds, edge);
         }
 
-        std::sort(edges.begin(), edges.end(), isEdgeGreater);
-
-        // If we clipped all the edges away, we don't have to do anything.
-        if (edges.size() == 0) {
+        int edgeCount = edge - storage;
+        if (edgeCount == 0) {
             return;
         }
 
-        GASSERT(edges.size() >= 2);
+        GASSERT(edgeCount >= 2);
 
-        int lastY = edges.back().bottomY;
+        std::sort(storage, storage + edgeCount);
+
+        int lastY = storage[edgeCount - 1].bottomY;
 
         // Set up our initial left and right boundary edges
-        Edge left = edges.front();
-        edges.pop_front();
+        Edge left = storage[0];
+        Edge right = storage[1];
 
-        Edge right = edges.front();
-        edges.pop_front();
+        // Track index of next edge position
+        int next = 2;
 
         float curY = left.topY;
 
@@ -117,33 +85,33 @@ public:
         float rightX = right.curX;
 
         // Loop through all the possible y-coordinates that could be drawn
-        while (curY <= lastY) {
+        while (curY < lastY) {
             GRect row = GRect::MakeLTRB(leftX, curY, rightX, curY + 1);
             drawRect(row, paint);
+
+            curY++;
 
             // After drawing, we check to see if we've completed either the
             // left or right edge. If we have, we replace it with the next
             // edge.
 
-            if (curY >= left.bottomY) {
-                left = edges.front();
-                edges.pop_front();
+            if (curY > left.bottomY) {
+                left = storage[next];
+                next++;
 
                 leftX = left.curX;
             } else {
-                leftX += left.slope;
+                leftX += left.dxdy;
             }
 
-            if (curY >= right.bottomY) {
-                right = edges.front();
-                edges.pop_front();
+            if (curY > right.bottomY) {
+                right = storage[next];
+                next++;
 
                 rightX = right.curX;
             } else {
-                rightX += right.slope;
+                rightX += right.dxdy;
             }
-
-            curY++;
         }
     }
 

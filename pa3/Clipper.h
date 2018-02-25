@@ -15,7 +15,37 @@ struct Edge {
     int topY;
     int bottomY;
     float curX;
-    float slope;
+    float dxdy;
+
+    /**
+     * Initialize a new edge from two points.
+     *
+     * Args:
+     *     p0:
+     *         The first point describing the edge.
+     *     p1:
+     *         The second point describing the edge.
+     *
+     * Returns:
+     *     A boolean indicating if the edge is meaningful. For example, edges
+     *     that don't cross a pixel center vertically are not meaningful.
+     */
+    bool init(GPoint p0, GPoint p1);
+
+    /**
+     * Determine if the edge is "less than" another edge.
+     *
+     * Edges are compared by their upper Y value, starting X value, and then
+     * slope.
+     *
+     * Args:
+     *     other:
+     *         The other edge to compare the current edge to.
+     *
+     * Returns:
+     *     A boolean indicating if the edge is "less than" the specified edge.
+     */
+    bool operator<(const Edge& other);
 };
 
 
@@ -31,11 +61,15 @@ struct Edge {
  *         A rectangle describing the boundaries of the clipping region. The
  *         part of the line segment extending outside the bounds will be
  *         clipped.
- *     results:
- *         A deque containing the edges resulting from the clipping process.
- *         Each clip operation can result in up to 3 new edges.
+ *     edge:
+ *         A pointer to the next available edge in an array of clipped edges.
+ *
+ * Returns:
+ *     A pointer to the next available edge in the array of clipped edges. The
+ *     pointer is moved forward by the number of edges created in the clip
+ *     process for the line, which is at most 3.
  */
-void clip(GPoint p0, GPoint p1, GRect bounds, std::deque<Edge>& results);
+Edge* clipLine(GPoint p0, GPoint p1, GRect bounds, Edge* edge);
 
 
 #endif
