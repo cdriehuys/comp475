@@ -191,8 +191,9 @@ private:
                 return;
             }
 
-            GPixel shaded[xRight - xLeft];
-            shader->shadeRow(xLeft, y, xRight - xLeft, shaded);
+            int count = xRight - xLeft;
+            GPixel shaded[count];
+            shader->shadeRow(xLeft, y, count, shaded);
 
             for (int x = xLeft; x < xRight; ++x) {
                 GPixel* addr = fDevice.getAddr(x, y);

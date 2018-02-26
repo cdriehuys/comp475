@@ -25,9 +25,10 @@ public:
 
     void shadeRow(int x, int y, int count, GPixel row[]) override {
         GPoint local = fInverse.mapXY(x + 0.5f, y + 0.5f);
+
         for (int i = 0; i < count; ++i) {
-            int sourceX = round(local.fX);
-            int sourceY = round(local.fY);
+            int sourceX = GRoundToInt(local.fX);
+            int sourceY = GRoundToInt(local.fY);
 
             // Clamp values
             sourceX = std::max(0, std::min(fSourceBitmap.width() - 1, sourceX));
