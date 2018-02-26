@@ -14,10 +14,13 @@ public:
     }
 
     bool setContext(const GMatrix& ctm) override {
-        GMatrix tmp;
-        tmp.setConcat(ctm, fLocalMatrix);
+        if (!ctm.invert(&fInverse)) {
+            return false;
+        }
 
-        return tmp.invert(&fInverse);
+        fInverse.postConcat(fLocalMatrix);
+
+        return true;
     }
 
     void shadeRow(int x, int y, int count, GPixel row[]) override {
