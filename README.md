@@ -3,12 +3,22 @@
 Programming assignments for COMP 475 at UNC.
 
 
-## Assignments
+## Testing
 
-### PA1
+### Unit Tests
 
-PA1 allows for filling the canvas with a color and drawing rectangles. Overlapping rectangles are blended using the SrcOver method.
+Each new assignment comes with a few unit tests.
 
-### PA2
+```shell
+$ make tests
+$ ./tests -v
+```
 
-PA2 builds off of PA1 by implementing 12 different Porter-Duff blend modes. In addition to that, the library is now capable of drawing any convex polygon.
+### Images
+
+Assignments also have a set of images that utilize the features implemented in the assignment.
+
+```shell
+$ make image
+$ ./image -e expected -v
+```
