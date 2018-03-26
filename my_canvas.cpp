@@ -1,6 +1,7 @@
 #include <stack>
 
 #include "GBitmap.h"
+#include "GBlitter.h"
 #include "GCanvas.h"
 #include "GColor.h"
 #include "GFilter.h"
@@ -34,6 +35,13 @@ public:
      * new polygon is drawn with respect to the pixels already on the screen.
      */
     void drawConvexPolygon(const GPoint srcPoints[], int count, const GPaint& paint) override {
+        // If the paint has a shader and we can't set its context, we can't
+        // draw anything.
+        if (paint.getShader() != nullptr
+                && !paint.getShader()->setContext(mCTMStack.top())) {
+            return;
+        }
+
         GPoint points[count];
         mCTMStack.top().mapPoints(points, srcPoints, count);
 
@@ -71,9 +79,11 @@ public:
         float leftX = left.curX;
         float rightX = right.curX;
 
+        GBlitter blitter = GBlitter(fDevice);
+
         // Loop through all the possible y-coordinates that could be drawn
         while (curY < lastY) {
-            drawRow(curY, GRoundToInt(leftX), GRoundToInt(rightX), paint);
+            blitter.blitRow(curY, GRoundToInt(leftX), GRoundToInt(rightX), paint);
             curY++;
 
             // After drawing, we check to see if we've completed either the
@@ -104,12 +114,8 @@ public:
      * Fill the entire canvas with a particular paint.
      */
     void drawPaint(const GPaint& paint) override {
-        GColor color = paint.getColor().pinToUnit();
-        GPixel pixel = colorToPixel(color);
-
-        for (int y = 0; y < fDevice.height(); ++y) {
-            drawRow(y, 0, fDevice.width(), paint);
-        }
+        GRect bounds = GRect::MakeWH(fDevice.width(), fDevice.height());
+        drawRect(bounds, paint);
     }
 
     /**
@@ -124,6 +130,10 @@ public:
         };
 
         drawConvexPolygon(points, 4, paint);
+    }
+
+    GMatrix getCTM() {
+        return mCTMStack.top();
     }
 
     void onSaveLayer(const GRect* bounds, const GPaint&) override {
@@ -147,41 +157,6 @@ private:
     const GBitmap fDevice;
 
     std::stack<GMatrix> mCTMStack;
-
-    void drawRow(int y, int xLeft, int xRight, const GPaint& paint) {
-        xLeft = std::max(0, xLeft);
-        xRight = std::min(fDevice.width(), xRight);
-
-        BlendProc blendProc = Blend_GetProc(paint.getBlendMode());
-
-        GShader* shader = paint.getShader();
-        if (shader == nullptr) {
-            GColor color = paint.getColor().pinToUnit();
-            GPixel source = colorToPixel(color);
-
-            for (int x = xLeft; x < xRight; ++x) {
-                GPixel* addr = fDevice.getAddr(x, y);
-                *addr = blendProc(source, *addr);
-            }
-        } else {
-            if (!shader->setContext(mCTMStack.top())) {
-                return;
-            }
-
-            int count = xRight - xLeft;
-            GPixel shaded[count];
-            shader->shadeRow(xLeft, y, count, shaded);
-
-            if (paint.getFilter() != nullptr) {
-                paint.getFilter()->filter(shaded, shaded, count);
-            }
-
-            for (int x = xLeft; x < xRight; ++x) {
-                GPixel* addr = fDevice.getAddr(x, y);
-                *addr = blendProc(shaded[x - xLeft], *addr);
-            }
-        }
-    }
 };
 
 

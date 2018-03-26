@@ -9,8 +9,7 @@
 #include "GBlendMode.h"
 #include "GPixel.h"
 
-class GBitmap;
-class GMatrix;
+class GColor;
 
 /**
  *  GShaders create colors to fill whatever geometry is being drawn to a GCanvas.
