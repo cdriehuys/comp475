@@ -15,9 +15,6 @@
 /**
  *  Defines our 32bit pixel to be just an int. It stores its components based
  *  on the defines GPIXEL_SHIFT_... for each component.
- *
- *  GPixels are in premultiplied form: the red, green, blue compoents have already been
- *  multiplied by their alpha value.
  */
 typedef uint32_t GPixel;
 
@@ -33,7 +30,6 @@ static inline int GPixel_GetB(GPixel p) { return (p >> GPIXEL_SHIFT_B) & 0xFF; }
  *  packs them into a GPixel.
  */
 static inline GPixel GPixel_PackARGB(unsigned a, unsigned r, unsigned g, unsigned b) {
-    // These asserts check that the components are "legal" for premultiplied colors
     GASSERT(a <= 255);
     GASSERT(r <= a);
     GASSERT(g <= a);

@@ -116,6 +116,53 @@ private:
     GColor  fColor;
 };
 
+static void make_regular_poly(GPoint pts[], int count, float cx, float cy, float rx, float ry) {
+    float angle = 0;
+    const float deltaAngle = M_PI * 2 / count;
+
+    for (int i = 0; i < count; ++i) {
+        pts[i].set(cx + cos(angle) * rx, cy + sin(angle) * ry);
+        angle += deltaAngle;
+    }
+}
+
+class ConvexShape : public Shape {
+public:
+    ConvexShape(GColor c, int sides) : fPaint(c), fN(sides) {
+        fBounds.setXYWH(100, 100, 150, 150);
+    }
+
+    void draw(GCanvas* canvas) override {
+        float sx = fBounds.width() * 0.5f;
+        float sy = fBounds.height() * 0.5f;
+        float cx = (fBounds.left() + fBounds.right()) * 0.5f;
+        float cy = (fBounds.top() + fBounds.bottom()) * 0.5f;
+
+        GPoint* pts = new GPoint[fN];
+        make_regular_poly(pts, fN, cx, cy, sx, sy);
+        canvas->drawConvexPolygon(pts, fN, fPaint);
+        delete[] pts;
+    }
+    
+    GRect getRect() override { return fBounds; }
+    void setRect(const GRect& r) override { fBounds = r; }
+    GColor getColor() override { return fPaint.getColor(); }
+    void setColor(const GColor& c) override { fPaint.setColor(c); }
+
+private:
+    GPaint  fPaint;
+    int     fN;
+    GRect   fBounds;
+};
+
+static Shape* cons_up_shape(unsigned index) {
+    if (index == 0) {
+        int n = (int)(3 + gRand.nextF() * 12);
+        return new ConvexShape(rand_color(), n);
+    }
+    return nullptr;
+}
+
 class TestWindow : public GWindow {
     std::vector<Shape*> fList;
     Shape* fShape;
@@ -142,6 +189,16 @@ protected:
     }
 
     bool onKeyPress(uint32_t sym) override {
+        {
+            Shape* s = cons_up_shape(sym - '1');
+            if (s) {
+                fList.push_back(fShape = s);
+                this->updateTitle();
+                this->requestDraw();
+                return true;
+            }
+        }
+
         if (fShape) {
             switch (sym) {
                 case SDLK_UP: {

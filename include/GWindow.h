@@ -1,19 +1,21 @@
 /**
  *  Copyright 2015 Mike Reed
+ *
+ *  COMP 575 -- Fall 2015
  */
 
 #ifndef GWindow_DEFINED
 #define GWindow_DEFINED
 
-#include <SDL2/SDL.h>
-#include <functional>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xos.h>
 
 #include "GBitmap.h"
 #include "GPoint.h"
 
 class GCanvas;
 class GClick;
-class GIRect;
 
 class GWindow {
 public:
@@ -23,44 +25,40 @@ protected:
     GWindow(int initial_width, int initial_height);
     virtual ~GWindow();
 
-    virtual void onUpdate(const GBitmap&, GCanvas*);
     virtual void onDraw(GCanvas*) {}
     virtual void onResize(int w, int h) {}
-    virtual bool onKeyPress(uint32_t) { return false; }
+    virtual bool onKeyPress(const XEvent&, KeySym) { return false; }
     virtual GClick* onFindClickHandler(GPoint) { return NULL; }
-    virtual void onDrawOverlays() {}
+    virtual void onHandleClick(GClick*) {}
 
     int width() const { return fWidth; }
     int height() const { return fHeight; }
     
     void setTitle(const char title[]);
     void requestDraw();
-    void drawOverlay(const GIRect* src, const GIRect* dst);
-
-
+    void setReadyToQuit() { fReadyToQuit = true; }
+    
 private:
+    Display*    fDisplay;
+    Window      fWindow;
+    GC          fGC;
     GClick*     fClick;
     
     GBitmap fBitmap;
-    std::unique_ptr<GCanvas> fCanvas;
+    GCanvas* fCanvas;
     int fWidth;
     int fHeight;
+    bool fReadyToQuit;
     bool fNeedDraw;
 
-    SDL_Window*   fWindow;
-    SDL_Renderer* fRenderer;
-    SDL_Texture*  fTexture;
-
-    uint32_t fInvalEventType;
-
-    bool handleEvent(const SDL_Event&);
+    bool handleEvent(XEvent*);
+    void drawCanvasToWindow();
     void setupBitmap(int w, int h);
-    void pushEvent(int code) const;
 };
 
 class GClick {
 public:
-    GClick(GPoint, std::function<void(GClick*)>);
+    GClick(GPoint, const char* name = NULL);
     
     enum State {
         kDown_State,
@@ -73,12 +71,13 @@ public:
     GPoint prev() const { return fPrev; }
     GPoint orig() const { return fOrig; }
 
-    void callback() { fFunc(this); }
+    const char* name() { return fName; }
+    bool isName(const char name[]) const { return !strcmp(name, fName); }
 
 private:
     GPoint  fCurr, fPrev, fOrig;
     State   fState;
-    std::function<void(GClick*)> fFunc;
+    const char* fName;
 
     friend class GWindow;
 };

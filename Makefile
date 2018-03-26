@@ -9,18 +9,24 @@ G_SRC = src/*.cpp *.cpp
 #
 G_INC = -Iinclude -Iapps -I/usr/local/include -L/usr/local/lib
 
-all: image
+all: image tests bench
 
 image : $(G_SRC) apps/image.cpp apps/image_recs.cpp
 	$(CC_DEBUG) $(G_INC) $(G_SRC) apps/image.cpp apps/image_recs.cpp -lpng -o image
 
-# needs xwindows to build
-#
-#X_INC = -I/opt/X11/include -L/opt/X11/lib
+tests : $(G_SRC) apps/tests.cpp apps/tests_recs.cpp
+	$(CC_DEBUG) $(G_INC) $(G_SRC) apps/tests.cpp apps/tests_recs.cpp -lpng -o tests
+
+bench : $(G_SRC) apps/bench.cpp apps/bench_recs.cpp apps/GTime.cpp
+	$(CC_RELEASE) $(G_INC) $(G_SRC) apps/GTime.cpp apps/bench.cpp apps/bench_recs.cpp -lpng -o bench
 
 DRAW_SRC = apps/draw.cpp apps/GWindow.cpp apps/GTime.cpp
 draw: $(DRAW_SRC) $(G_SRC)
 	$(CC_RELEASE) $(G_INC) $(G_SRC) $(DRAW_SRC) -lpng -lSDL2 -o draw
+
+PAINT_SRC = apps/paint.cpp apps/GWindow.cpp apps/GTime.cpp
+paint: $(PAINT_SRC) $(G_SRC)
+	$(CC_RELEASE) $(G_INC) $(G_SRC) $(PAINT_SRC) -lpng -lSDL2 -o paint
 
 VIEWER_SRC = apps/viewer.cpp apps/GWindow.cpp apps/GTime.cpp apps/image_recs.cpp
 viewer: $(VIEWER_SRC) $(G_SRC)
@@ -33,5 +39,5 @@ bounce: $(BOUNCE_SRC) $(G_SRC)
 
 
 clean:
-	@rm -rf image draw viewer bounce *.png *.dSYM
+	@rm -rf image draw paint viewer bounce bench tests *.png *.dSYM
 

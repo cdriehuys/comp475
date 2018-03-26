@@ -60,4 +60,13 @@ public:
     }
 };
 
+template <typename T> class GSize {
+public:
+    T fWidth, fHeight;
+    
+    T width() { return fWidth; }
+    T height() { return fHeight; }
+};
+typedef GSize<int> GISize;
+
 #endif

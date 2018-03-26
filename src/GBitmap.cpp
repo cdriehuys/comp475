@@ -195,7 +195,6 @@ typedef void (*swizzle_row_proc)(GPixel[], const uint8_t[], int);
 
 static bool always_false() {
     printf("error\n");
-    GASSERT(false);
     return false;
 }
 

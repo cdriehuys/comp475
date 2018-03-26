@@ -8,10 +8,6 @@
 #include "GMath.h"
 #include "GPixel.h"
 
-/**
- *  Defines an un-premultiplied color, where alpha, red, green, blue are all independent of
- *  each other. Legal values for each component are [0.0 .. 1.0].
- */
 class GColor {
 public:
     float   fA;

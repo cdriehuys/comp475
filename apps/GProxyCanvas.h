@@ -25,6 +25,18 @@ public:
         }
     }
 
+    void fillBitmapRect(const GBitmap& b, const GRect& r) override {
+        if (this->allowDraw()) {
+            fProxy->fillBitmapRect(b, r);
+        }
+    }
+
+    void fillConvexPolygon(const GPoint pts[], int count, const GColor& color) override {
+        if (this->allowDraw()) {
+            fProxy->fillConvexPolygon(pts, count, color);
+        }
+    }
+
 private:
     GCanvas* fProxy;
 };

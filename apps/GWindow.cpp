@@ -158,6 +158,10 @@ void GWindow::drawOverlay(const GIRect* src, const GIRect* dst) {
     SDL_RenderCopy(fRenderer, fTexture, &s, &d);
 }
 
+void GWindow::onUpdate(const GBitmap& bitmap, GCanvas* canvas) {
+    this->onDraw(canvas);
+}
+
 int GWindow::run() {
     if (!fWindow) {
         return -1;
@@ -171,7 +175,7 @@ int GWindow::run() {
 
         if (fNeedDraw) {
             fNeedDraw = false;  // clear this before we call onDraw
-            this->onDraw(fCanvas.get());
+            this->onUpdate(fBitmap, fCanvas.get());
             SDL_UpdateTexture(fTexture, nullptr, fBitmap.pixels(), fBitmap.rowBytes());
         }
         SDL_RenderCopy(fRenderer, fTexture, nullptr, nullptr);

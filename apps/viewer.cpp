@@ -50,7 +50,7 @@ class ViewerWindow : public GWindow {
     int fRecCount;
     int fOpCount = -1;
     float fOpPercent = 1;
-    bool fZoomer;
+    bool fZoomer = false;
 
 public:
     ViewerWindow(int w, int h) : GWindow(w, h) {

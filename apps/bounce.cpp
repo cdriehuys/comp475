@@ -23,24 +23,59 @@ static float bounce(float value, float min, float max, float* dir) {
     return value;
 }
 
+static GRandom gRand;
+
 struct Shape {
+    enum {
+        N = 10
+    };
     GPoint  fPos;
     GVector fVec;
 
     float   fWidth, fHeight;
     GColor  fColor;
 
+    GPoint  fPts[N];
+    int     fCount;
+
+    Shape(GPoint pos, GVector vec, float w, float h, GColor c) {
+        fPos = pos;
+        fVec = vec;
+        fWidth = w;
+        fHeight = h;
+        fColor = c;
+
+        int n = 3 + gRand.nextU() % (N - 3);
+
+        fCount = n;
+        for (int i = 0; i < n; ++i) {
+            fPts[i] = {
+                pos.fX + 0.6f * w * sinf(i * 2 * M_PI / n),
+                pos.fY + 0.6f * w * cosf(i * 2 * M_PI / n),
+            };
+        }
+    }
+
     GRect rect() const {
         return GRect::MakeXYWH(fPos.fX - fWidth*0.5, fPos.fY - fHeight*0.5, fWidth, fHeight);
     }
 
     void bounce(const GRect& r, float speed) {
-        fPos.fX = ::bounce(fPos.fX + fVec.fX * speed, r.left(), r.right(), &fVec.fX);
-        fPos.fY = ::bounce(fPos.fY + fVec.fY * speed, r.top(), r.bottom(), &fVec.fY);
+        float nx = ::bounce(fPos.fX + fVec.fX * speed, r.left(), r.right(), &fVec.fX);
+        float ny = ::bounce(fPos.fY + fVec.fY * speed, r.top(), r.bottom(), &fVec.fY);
+
+        float dx = nx - fPos.fX;
+        float dy = ny - fPos.fY;
+        for (int i = 0; i < fCount; ++i) {
+            fPts[i].fX += dx;
+            fPts[i].fY += dy;
+        }
+        fPos.fX = nx;
+        fPos.fY = ny;
     }
 
     void draw(GCanvas* canvas) const {
-        canvas->fillRect(this->rect(), fColor);
+        canvas->drawConvexPolygon(fPts, fCount, GPaint(fColor));
     }
 };
 
