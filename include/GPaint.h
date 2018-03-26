@@ -7,6 +7,8 @@
 
 #include "GColor.h"
 
+class GShader;
+
 enum class GBlendMode {
     kClear,    //!< [0, 0]
     kSrc,      //!< [Sa, Sc]
@@ -24,8 +26,9 @@ enum class GBlendMode {
 
 class GPaint {
 public:
-    GPaint() : fColor(GColor::MakeARGB(1, 0, 0, 0)) {}
+    GPaint() {}
     GPaint(const GColor& c) : fColor(c) {}
+    GPaint(GShader* sh) : fShader(sh) {}
 
     const GColor& getColor() const { return fColor; }
     GPaint& setColor(GColor c) { fColor = c; return *this; }
@@ -39,8 +42,12 @@ public:
     GBlendMode  getBlendMode() const { return fMode; }
     GPaint& setBlendMode(GBlendMode m) { fMode = m; return *this; }
 
+    GShader* getShader() const { return fShader; }
+    void setShader(GShader* s) { fShader = s; }
+
 private:
-    GColor      fColor;
+    GColor      fColor = GColor::MakeARGB(1, 0, 0, 0);
+    GShader*    fShader = nullptr;
     GBlendMode  fMode = GBlendMode::kSrcOver;
 };
 

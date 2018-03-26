@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
     const char* report = NULL;
     const char* author = NULL;
     FILE* reportFile = NULL;
+    const char* scoreFile = nullptr;
 
     for (int i = 1; i < argc; ++i) {
         if (is_arg(argv[i], "report") && i+2 < argc) {
@@ -35,6 +36,8 @@ int main(int argc, char** argv) {
             }
         } else if (is_arg(argv[i], "verbose")) {
             gTestSuite_Verbose = true;
+        } else if (is_arg(argv[i], "scoreFile") && i+1 < argc) {
+            scoreFile = argv[++i];
         } else if (is_arg(argv[i], "crash")) {
             gTestSuite_CrashOnFailure = true;
         } else if (is_arg(argv[i], "help")) {
@@ -64,6 +67,16 @@ int main(int argc, char** argv) {
     printf("%16s: [%3d/%3d]  %d\n", "tests", stats.fPassCounter, stats.fTestCounter, score);
     if (reportFile) {
         fprintf(reportFile, "%s, tests, %d\n", author, score);
+    }
+    if (scoreFile) {
+        FILE* f = fopen(scoreFile, "w");
+        if (f) {
+            fprintf(f, "%d", score);
+            fclose(f);
+        } else {
+            printf("FAILED TO WRITE TO %s\n", scoreFile);
+            return -1;
+        }
     }
     return 0;
 }

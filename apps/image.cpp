@@ -166,6 +166,7 @@ int main(int argc, char** argv) {
     const char* diffDir = NULL;
     const char* report = NULL;
     const char* author = NULL;
+    const char* scoreFile = nullptr;
     FILE* reportFile = NULL;
     FILE* diffFile = NULL;
     int tolerance = 0;
@@ -198,6 +199,8 @@ int main(int argc, char** argv) {
         } else if (is_arg(argv[i], "tolerance") && i+1 < argc) {
             tolerance = atoi(argv[++i]);
             GASSERT(tolerance >= 0);
+        } else if (is_arg(argv[i], "scoreFile") && i+1 < argc) {
+            scoreFile = argv[++i];
         } else if (is_arg(argv[i], "diff") && i+1 < argc) {
             diffDir = argv[++i];
             std::string path(diffDir);
@@ -280,6 +283,16 @@ int main(int argc, char** argv) {
     }
     if (reportFile) {
         fprintf(reportFile, "%s, image, %d\n", author, image_score);
+    }
+    if (scoreFile) {
+        FILE* f = fopen(scoreFile, "w");
+        if (f) {
+            fprintf(f, "%d", image_score);
+            fclose(f);
+        } else {
+            printf("FAILED TO WRITE TO %s\n", scoreFile);
+            return -1;
+        }
     }
     return 0;
 }

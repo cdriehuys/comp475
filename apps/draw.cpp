@@ -8,6 +8,7 @@
 #include "GColor.h"
 #include "GRandom.h"
 #include "GRect.h"
+#include "GShader.h"
 
 #include <vector>
 
@@ -102,18 +103,59 @@ public:
         fRect = GRect::MakeXYWH(0, 0, 0, 0);
     }
 
-    virtual void draw(GCanvas* canvas) {
+    void draw(GCanvas* canvas) override {
         canvas->fillRect(fRect, fColor);
     }
 
-    virtual GRect getRect() { return fRect; }
-    virtual void setRect(const GRect& r) { fRect = r; }
-    virtual GColor getColor() { return fColor; }
-    virtual void setColor(const GColor& c) { fColor = c; }
+    GRect getRect() override { return fRect; }
+    void setRect(const GRect& r) override { fRect = r; }
+    GColor getColor() override { return fColor; }
+    void setColor(const GColor& c) override { fColor = c; }
 
 private:
     GRect   fRect;
     GColor  fColor;
+};
+
+class BitmapShape : public Shape {
+public:
+    BitmapShape(const GBitmap& bm) : fBM(bm) {
+        fRect = GRect::MakeXYWH(20, 20, 150, 150);
+    }
+
+    void draw(GCanvas* canvas) override {
+        GPaint paint;
+#if 0
+        GMatrix inv, m = GMatrix::MakeScale(fRect.width() / fBM.width(),
+                                            fRect.height() / fBM.height());
+        m.postTranslate(fRect.left(), fRect.top());
+        if (m.invert(&inv)) {
+            auto sh = GCreateBitmapShader(fBM, inv);
+            paint.setShader(sh.get());
+            canvas->drawRect(fRect, paint);
+        }
+#else
+        auto sh = GCreateBitmapShader(fBM, GMatrix());
+        paint.setShader(sh.get());
+
+        canvas->save();
+        canvas->translate(fRect.left(), fRect.top());
+        canvas->scale(fRect.width() / fBM.width(),
+                      fRect.height() / fBM.height());
+        canvas->drawRect(GRect::MakeWH(fBM.width(), fBM.height()), paint);
+        canvas->restore();
+#endif
+    }
+
+    GRect getRect() override { return fRect; }
+    void setRect(const GRect& r) override { fRect = r; }
+    GColor getColor() override { return fColor; }
+    void setColor(const GColor& c) override { fColor = c; }
+
+private:
+    GRect   fRect;
+    GColor  fColor = { 1, 0, 0, 0 };
+    GBitmap fBM;
 };
 
 static void make_regular_poly(GPoint pts[], int count, float cx, float cy, float rx, float ry) {
@@ -156,7 +198,16 @@ private:
 };
 
 static Shape* cons_up_shape(unsigned index) {
-    if (index == 0) {
+    const char* names[] = {
+        "apps/spock.png", "apps/oldwell.png",
+    };
+    if (index < GARRAY_COUNT(names)) {
+        GBitmap bm;
+        if (bm.readFromFile(names[index])) {
+            return new BitmapShape(bm);
+        }
+    }
+    if (index == 2) {
         int n = (int)(3 + gRand.nextF() * 12);
         return new ConvexShape(rand_color(), n);
     }

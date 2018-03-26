@@ -13,27 +13,25 @@ public:
 
     bool virtual allowDraw() { return true; }
 
-    void clear(const GColor& c) override {
+    void save() override { if (fProxy) fProxy->save(); }
+    void restore() override { if (fProxy) fProxy->restore(); }
+    void concat(const GMatrix& m) override { if (fProxy) fProxy->concat(m); }
+
+    void drawPaint(const GPaint& p) override {
         if (this->allowDraw()) {
-            fProxy->clear(c);
+            fProxy->drawPaint(p);
         }
     }
 
-    void fillRect(const GRect& r, const GColor& c) override {
+    void drawRect(const GRect& r, const GPaint& p) override {
         if (this->allowDraw()) {
-            fProxy->fillRect(r, c);
+            fProxy->drawRect(r, p);
         }
     }
 
-    void fillBitmapRect(const GBitmap& b, const GRect& r) override {
+    void drawConvexPolygon(const GPoint pts[], int count, const GPaint& p) override {
         if (this->allowDraw()) {
-            fProxy->fillBitmapRect(b, r);
-        }
-    }
-
-    void fillConvexPolygon(const GPoint pts[], int count, const GColor& color) override {
-        if (this->allowDraw()) {
-            fProxy->fillConvexPolygon(pts, count, color);
+            fProxy->drawConvexPolygon(pts, count, p);
         }
     }
 

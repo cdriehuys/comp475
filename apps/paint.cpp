@@ -8,6 +8,7 @@
 #include "GColor.h"
 #include "GRandom.h"
 #include "GRect.h"
+#include "GShader.h"
 
 #include <vector>
 
@@ -28,44 +29,78 @@ static GRect offset(const GRect& r, GPoint offset) {
     return GRect::MakeXYWH(r.left() + offset.x(), r.top() + offset.y(), r.width(), r.height());
 }
 
+static void make_regular_poly(GPoint pts[], int count, float cx, float cy, float radius) {
+    float angle = 0;
+    const float deltaAngle = M_PI * 2 / count;
+
+    for (int i = 0; i < count; ++i) {
+        pts[i].set(cx + cos(angle) * radius, cy + sin(angle) * radius);
+        angle += deltaAngle;
+    }
+}
+
+
 class RectBrush : public Brush {
 public:
-    RectBrush(const GRect& r, const GColor& c) : fR(r), fC(c) {}
+    RectBrush(const GRect& r, const GColor& c, GBlendMode m) : fR(r) {
+        fP.setColor(c);
+        fP.setBlendMode(m);
+    }
 
     void draw(GCanvas* canvas, GPoint loc) override {
-        canvas->fillRect(offset(fR, loc), fC);
+        if (false) {
+        GPoint pts[12];
+        make_regular_poly(pts, GARRAY_COUNT(pts), loc.x(), loc.y(), fR.width()*0.5f);
+        canvas->drawConvexPolygon(pts, GARRAY_COUNT(pts), fP);
+        }
+        if (true) {
+            canvas->drawRect(offset(fR, loc), fP);
+        }
     }
 
 private:
     GRect   fR;
-    GColor  fC;
+    GPaint  fP;
 };
 
+static void fill(const GBitmap& bm, uint8_t byte) {
+    memset(bm.getAddr(0, 0), byte, bm.height() * bm.rowBytes());
+}
+
+static void draw_bitmap(GCanvas* canvas, const GBitmap& bm, GBlendMode mode) {
+    auto sh = GCreateBitmapShader(bm, GMatrix());
+    GPaint paint;
+    paint.setShader(sh.get());
+    paint.setBlendMode(mode);
+    canvas->drawRect(GRect::MakeWH(bm.width(), bm.height()), paint);
+}
+
+static void draw_bitmap(const GBitmap& bg, const GBitmap& fg, GBlendMode mode) {
+    draw_bitmap(GCreateCanvas(bg).get(), fg, mode);
+}
+
 class TestWindow : public GWindow {
-    GBitmap fBitmap;
+    GBitmap fFG, fBG;
 
 public:
     TestWindow(int w, int h) : GWindow(w, h) {
-        fBitmap.alloc(1024, 768);
-        memset(fBitmap.getAddr(0, 0), 0xFF, fBitmap.height() * fBitmap.rowBytes());
+        fFG.alloc(1024, 768); fill(fFG, 0);
+        fBG.alloc(1024, 768); fill(fBG, 0xFF);
     }
 
     virtual ~TestWindow() {}
     
 protected:
-    void onUpdate(const GBitmap& dst, GCanvas* canvas) override {
-        int w = std::min(dst.width(), fBitmap.width());
-        int h = std::min(dst.height(), fBitmap.height());
-        for (int y = 0; y < h; ++y) {
-            memcpy(dst.getAddr(0, y), fBitmap.getAddr(0, y), w << 2);
-        }
+    void onDraw(GCanvas* canvas) override {
+        draw_bitmap(canvas, fBG, GBlendMode::kSrc);
+        draw_bitmap(canvas, fFG, GBlendMode::kSrcOver);
     }
 
     bool onKeyPress(uint32_t sym) override {
         switch (sym) {
             case 'c':
             case 'C':
-                GCreateCanvas(fBitmap)->clear({1, 1, 1, 1});
+                fill(fBG, 0xFF);
                 this->requestDraw();
                 return true;
         }
@@ -73,17 +108,19 @@ protected:
     }
 
     GClick* onFindClickHandler(GPoint loc) override {
-        GRect r = GRect::MakeWH(20, 20);
-        Brush* b = new RectBrush(r, rand_color());
-        GCanvas* c = GCreateCanvas(fBitmap).release();
+        GRect r = GRect::MakeWH(30, 30);
+        Brush* b = new RectBrush(r, rand_color(), GBlendMode::kSrc);
+        GCanvas* c = GCreateCanvas(fFG).release();
         return new GClick(loc, [this, c, b](GClick* click) {
             if (click->state() == GClick::kUp_State) {
+                draw_bitmap(fBG, fFG, GBlendMode::kSrcOver);
+                fill(fFG, 0);
                 delete c;
                 delete b;
             } else {
                 b->draw(c, click->curr());
-                this->requestDraw();
             }
+            this->requestDraw();
         });
     }
 

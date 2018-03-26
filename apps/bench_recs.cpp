@@ -127,6 +127,29 @@ public:
     }
 };
 
+class ModesBench : public GBenchmark {
+    enum { W = 200, H = 200 };
+    const GColor fColor;
+    const char* fName;
+public:
+    ModesBench(const GColor& c, const char* name) : fColor(c), fName(name) {}
+
+    const char* name() const override { return fName; }
+    GISize size() const override { return { W, H }; }
+    void draw(GCanvas* canvas) override {
+        const GRect r = GRect::MakeWH(W, H);
+        GPaint paint(fColor);
+
+        const int N = 50;
+        for (int m = 0; m < 12; ++m) {
+            paint.setBlendMode(static_cast<GBlendMode>(m));
+            for (int i = 0; i < N; ++i) {
+                canvas->drawRect(r, paint);
+            }
+        }
+    }
+};
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 const GBenchmark::Factory gBenchFactories[] {
@@ -143,6 +166,9 @@ const GBenchmark::Factory gBenchFactories[] {
     []() -> GBenchmark* { return new PolyRectsBench(true);  },
     []() -> GBenchmark* { return new CirclesBench(false); },
     []() -> GBenchmark* { return new CirclesBench(true);  },
+    []() -> GBenchmark* { return new ModesBench({0.0, 1, 0.5, 0.25}, "modes_0"); },
+    []() -> GBenchmark* { return new ModesBench({0.5, 1, 0.5, 0.25}, "modes_half"); },
+    []() -> GBenchmark* { return new ModesBench({1.0, 1, 0.5, 0.25}, "modes_1"); },
 
     nullptr,
 };

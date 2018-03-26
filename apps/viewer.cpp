@@ -77,9 +77,11 @@ protected:
             gDrawRecs[fRecIndex].fDraw(&counter);
             fOpCount = counter.getCount();
         }
-        
+
+        canvas->save();
         LimitCanvas limit(canvas, GRoundToInt(fOpPercent * fOpCount));
         gDrawRecs[fRecIndex].fDraw(&limit);
+        canvas->restore();
 
         GRect r = fSlider;
         r.fBottom = r.fTop + fOpPercent * fSlider.height();
