@@ -17,11 +17,15 @@ void GBlitter::blitRow(int y, int xLeft, int xRight, const GPaint& paint) {
     GShader* shader = paint.getShader();
     if (shader == nullptr) {
         GColor color = paint.getColor().pinToUnit();
-        GPixel source = colorToPixel(color);
+        GPixel source[1] = {colorToPixel(color)};
+
+        if (paint.getFilter() != nullptr) {
+            paint.getFilter()->filter(source, source, 1);
+        }
 
         for (int x = xLeft; x < xRight; ++x) {
             GPixel* addr = this->fBitmap.getAddr(x, y);
-            *addr = blendProc(source, *addr);
+            *addr = blendProc(source[0], *addr);
         }
     } else {
         int count = xRight - xLeft;
