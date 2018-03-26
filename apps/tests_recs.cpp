@@ -295,6 +295,8 @@ static void test_matrix_map(GTestStats* stats) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include "tests_pa4.cpp"
+
 const GTestRec gTestRecs[] = {
     { test_clear,       "clear"         },
     { test_rect_colors, "rect_colors"   },
@@ -305,6 +307,9 @@ const GTestRec gTestRecs[] = {
     { test_matrix,      "matrix_setters"    },
     { test_matrix_inv,  "matrix_inv"        },
     { test_matrix_map,  "matrix_map"        },
+
+    { test_filters,     "filters",          },
+    { test_savelayesr,  "savelayer",        },
 
     { nullptr, nullptr },
 };

@@ -6,29 +6,17 @@
 #define GPaint_DEFINED
 
 #include "GColor.h"
+#include "GBlendMode.h"
 
+class GFilter;
 class GShader;
-
-enum class GBlendMode {
-    kClear,    //!< [0, 0]
-    kSrc,      //!< [Sa, Sc]
-    kDst,      //!< [Da, Dc]
-    kSrcOver,  //!< [Sa + Da * (1 - Sa), Sc + Dc * (1 - Sa)]
-    kDstOver,  //!< [Da + Sa * (1 - Da), Dc + Sc * (1 - Da)]
-    kSrcIn,    //!< [Sa * Da, Sc * Da]
-    kDstIn,    //!< [Da * Sa, Dc * Sa]
-    kSrcOut,   //!< [Sa * (1 - Da), Sc * (1 - Da)]
-    kDstOut,   //!< [Da * (1 - Sa), Dc * (1 - Sa)]
-    kSrcATop,  //!< [Da, Sc * Da + Dc * (1 - Sa)]
-    kDstATop,  //!< [Sa, Dc * Sa + Sc * (1 - Da)]
-    kXor,      //!< [Sa + Da - 2 * Sa * Da, Sc * (1 - Da) + Dc * (1 - Sa)]
-};
 
 class GPaint {
 public:
     GPaint() {}
     GPaint(const GColor& c) : fColor(c) {}
     GPaint(GShader* sh) : fShader(sh) {}
+    GPaint(GFilter* fl) : fFilter(fl) {}
 
     const GColor& getColor() const { return fColor; }
     GPaint& setColor(GColor c) { fColor = c; return *this; }
@@ -39,15 +27,19 @@ public:
         return *this;
     }
 
-    GBlendMode  getBlendMode() const { return fMode; }
+    GBlendMode getBlendMode() const { return fMode; }
     GPaint& setBlendMode(GBlendMode m) { fMode = m; return *this; }
 
     GShader* getShader() const { return fShader; }
-    void setShader(GShader* s) { fShader = s; }
+    GPaint&  setShader(GShader* s) { fShader = s; return *this; }
+
+    GFilter* getFilter() const { return fFilter; }
+    GPaint&  setFilter(GFilter* filter) { fFilter = filter; return *this; }
 
 private:
     GColor      fColor = GColor::MakeARGB(1, 0, 0, 0);
     GShader*    fShader = nullptr;
+    GFilter*    fFilter = nullptr;
     GBlendMode  fMode = GBlendMode::kSrcOver;
 };
 

@@ -97,4 +97,12 @@ private:
     static bool ComputeIsOpaque(const GBitmap&);
 };
 
+template <typename S> void visit_pixels(const GBitmap& bm, S&& visitor) {
+    for (int y = 0; y < bm.height(); ++y) {
+        for (int x = 0; x < bm.width(); ++x) {
+            visitor(x, y, bm.getAddr(x, y));
+        }
+    }
+}
+
 #endif

@@ -45,7 +45,7 @@ void GBitmap::alloc(int w, int h, size_t rb) {
     fRowBytes = rb;
 
     this->reset(w, h, rb,
-                (w > 0 && h > 0) ? (GPixel*)malloc(h * rb) : nullptr,
+                (w > 0 && h > 0) ? (GPixel*)calloc(h, rb) : nullptr,
                 kNo_IsOpaque);
 }
 

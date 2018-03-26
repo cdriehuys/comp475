@@ -30,6 +30,25 @@ public:
     virtual void save() = 0;
 
     /**
+     *  Also saves the CTM state (just like save()) but this additionally creates a temporary
+     *  surface for subsequent drawing, initially set to transparent. When the balancing call to
+     *  restore() is made, that surface (layer) is blended against the previous surface.
+     *
+     *  If bounds is not null, it is conservative bounds of the area that will be drawn, in local
+     *  coordinates. Implementations can use this to minimize the size of the offscreen layer.
+     *  The bounds should be run through the CTM, and then the rounded bounds of that (in device
+     *  coordintaes) is the extent of the needed layer. Note: this can be clipped to the bounds of
+     *  the previous surface (or the root bitmap if there is no previous call to saveLayer).
+     *
+     *  If the paint's filter is not null, then the surface is first "filtered" before it is drawn
+     *  onto the previous layer during restore, using the paint's blendmode.
+     */
+    void saveLayer(const GRect* bounds, const GPaint& paint) { this->onSaveLayer(bounds, paint); }
+    void saveLayer(const GPaint& paint) { this->onSaveLayer(nullptr, paint); }
+    void saveLayer(const GRect& bounds) { this->onSaveLayer(&bounds, GPaint()); }
+    void saveLayer() { this->onSaveLayer(nullptr, GPaint()); }
+
+    /**
      *  Copy the canvas state (CTM) that was record in the correspnding call to save() back into
      *  the canvas. It is an error to call restore() if there has been no previous call to save().
      */
@@ -85,6 +104,9 @@ public:
     void fillRect(const GRect& rect, const GColor& color) {
         this->drawRect(rect, GPaint(color));
     }
+
+protected:
+    virtual void onSaveLayer(const GRect* bounds, const GPaint&) = 0;
 };
 
 /**

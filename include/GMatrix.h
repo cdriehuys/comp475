@@ -165,14 +165,18 @@ public:
         return m;
     }
     
+    void mapPoints(GPoint pts[], int count) const {
+        this->mapPoints(pts, pts, count);
+    }
+    
     GPoint mapXY(float x, float y) const {
         GPoint pts[1]{ x, y };
-        this->mapPoints(pts, pts, 1);
+        this->mapPoints(pts, 1);
         return pts[0];
     }
 
     GPoint mapPt(GPoint pt) const {
-        this->mapPoints(&pt, &pt, 1);
+        this->mapPoints(&pt, 1);
         return pt;
     }
 

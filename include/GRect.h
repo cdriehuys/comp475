@@ -24,6 +24,14 @@ public:
     T width() const { return fRight - fLeft; }
     T height() const { return fBottom - fTop; }
 
+    friend bool operator==(const GTRect& a, const GTRect& b) {
+        return  a.fLeft == b.fLeft  && a.fTop    == b.fTop &&
+               a.fRight == b.fRight && a.fBottom == b.fBottom;
+    }
+    friend bool operator!=(const GTRect& a, const GTRect& b) {
+        return !(a == b);
+    }
+
     bool isEmpty() const { return fLeft >= fRight || fTop >= fBottom; }
 
     void setLTRB(T l, T t, T r, T b) {
@@ -71,6 +79,11 @@ public:
 
     bool contains(T x, T y) const {
         return fLeft <= x && x < fRight && fTop <= y && y < fBottom;
+    }
+
+    bool contains(const GTRect& inner) const {
+        return fLeft <= inner.fLeft && fTop <= inner.fTop &&
+               fRight >= inner.fRight && fBottom >= inner.fBottom;
     }
 
     void offset(T dx, T dy) {

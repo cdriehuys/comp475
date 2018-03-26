@@ -3,6 +3,7 @@
 #include "GBitmap.h"
 #include "GCanvas.h"
 #include "GColor.h"
+#include "GFilter.h"
 #include "GMath.h"
 #include "GMatrix.h"
 #include "GPixel.h"
@@ -12,32 +13,7 @@
 
 #include "Blend.h"
 #include "Clipper.h"
-
-
-/**
- * Convert a float in the range [0.0 ... 1.0] to an 8-bit integer.
- */
-int floatToPixelValue(float value) {
-    GASSERT(0 <= value && value <= 1);
-
-    return GRoundToInt(value * 255);
-}
-
-
-/**
- * Convert a GColor to a GPixel that can actually be used.
- *
- * The color components are pre-multiplied by the alpha value before being
- * compacted.
- */
-GPixel colorToPixel(const GColor& color) {
-    int alpha = floatToPixelValue(color.fA);
-    int red   = floatToPixelValue(color.fR * color.fA);
-    int green = floatToPixelValue(color.fG * color.fA);
-    int blue  = floatToPixelValue(color.fB * color.fA);
-
-    return GPixel_PackARGB(alpha, red, green, blue);
-}
+#include "ColorUtils.h"
 
 
 class MyCanvas : public GCanvas {
@@ -132,10 +108,7 @@ public:
         GPixel pixel = colorToPixel(color);
 
         for (int y = 0; y < fDevice.height(); ++y) {
-            for (int x = 0; x < fDevice.width(); ++x) {
-                GPixel* addr = fDevice.getAddr(x, y);
-                *addr = pixel;
-            }
+            drawRow(y, 0, fDevice.width(), paint);
         }
     }
 
@@ -151,6 +124,10 @@ public:
         };
 
         drawConvexPolygon(points, 4, paint);
+    }
+
+    void onSaveLayer(const GRect* bounds, const GPaint&) override {
+
     }
 
     void restore() override {
@@ -194,6 +171,10 @@ private:
             int count = xRight - xLeft;
             GPixel shaded[count];
             shader->shadeRow(xLeft, y, count, shaded);
+
+            if (paint.getFilter() != nullptr) {
+                paint.getFilter()->filter(shaded, shaded, count);
+            }
 
             for (int x = xLeft; x < xRight; ++x) {
                 GPixel* addr = fDevice.getAddr(x, y);

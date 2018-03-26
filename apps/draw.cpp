@@ -6,6 +6,7 @@
 #include "GBitmap.h"
 #include "GCanvas.h"
 #include "GColor.h"
+#include "GFilter.h"
 #include "GRandom.h"
 #include "GRect.h"
 #include "GShader.h"
@@ -137,6 +138,8 @@ public:
 #else
         auto sh = GCreateBitmapShader(fBM, GMatrix());
         paint.setShader(sh.get());
+        auto fl = GCreateBlendFilter(GBlendMode::kDstIn, fColor);
+        paint.setFilter(fl.get());
 
         canvas->save();
         canvas->translate(fRect.left(), fRect.top());

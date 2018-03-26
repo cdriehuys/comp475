@@ -19,7 +19,7 @@ class CheckerShader : public GShader {
     GMatrix fInverse;
     
 public:
-    CheckerShader(float scale, const GPixel& p0, const GPixel& p1)
+    CheckerShader(float scale, GPixel p0, GPixel p1)
         : fLocalMatrix(GMatrix::MakeScale(scale, scale))
         , fP0(p0)
         , fP1(p1)
@@ -201,10 +201,10 @@ static void draw_mode_sample2(GCanvas* canvas, const GRect& bounds, GBlendMode m
     canvas->drawRect(bounds, paint);
 }
 
-static void draw_bm_blendmodes(GCanvas* canvas) {
+static void draw_all_blendmodes(GCanvas* canvas, void (*proc)(GCanvas*, const GRect&, GBlendMode)) {
     canvas->clear({1,1,1,1});
     const GRect r = GRect::MakeWH(100, 100);
-
+    
     const float W = 100;
     const float H = 100;
     const float margin = 10;
@@ -214,7 +214,7 @@ static void draw_bm_blendmodes(GCanvas* canvas) {
         GBlendMode mode = static_cast<GBlendMode>((i + 1) % 12);
         canvas->save();
         canvas->translate(x, y);
-        draw_mode_sample2(canvas, r, mode);
+        proc(canvas, r, mode);
         canvas->restore();
         if (i % 4 == 3) {
             y += H + margin;
@@ -223,4 +223,8 @@ static void draw_bm_blendmodes(GCanvas* canvas) {
             x += W + margin;
         }
     }
+}
+
+static void draw_bm_blendmodes(GCanvas* canvas) {
+    draw_all_blendmodes(canvas, draw_mode_sample2);
 }
