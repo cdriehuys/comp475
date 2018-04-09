@@ -8,6 +8,7 @@
 #include "image_pa2.cpp"
 #include "image_pa3.cpp"
 #include "image_pa4.cpp"
+#include "image_pa5.cpp"
 
 const GDrawRec gDrawRecs[] = {
     { draw_solid_ramp,  256, 7*28,  "solid_ramp",   1   },
@@ -30,6 +31,13 @@ const GDrawRec gDrawRecs[] = {
     { draw_pluses,      260, 260,   "plus",         4 },
     { draw_filter_blendmodes, 450, 340, "filter_blendmodes", 4 },
     { draw_paint_blendmodes, 450, 340, "filter_paint", 4 },
+
+    { stars,            512, 512,   "stars",        5 },
+    { draw_lion,        512, 512,   "lion",         5 },
+    { draw_lion_head,   512, 512,   "lion_head",    5 },
+    { draw_grad,        250, 200,   "grad",         5 },
+    { draw_gradient_blendmodes, 450, 340, "gradient_blendmodes", 5 },
+    { draw_graphs2,     256, 256,   "path_graphs",  5  },
 
     { nullptr, 0, 0, nullptr },
 };

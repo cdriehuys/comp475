@@ -9,6 +9,7 @@
 #include "GPaint.h"
 
 class GBitmap;
+class GPath;
 class GPoint;
 class GRect;
 
@@ -76,10 +77,14 @@ public:
     virtual void drawRect(const GRect&, const GPaint&) = 0;
 
     /**
-     *  Fill the convex polygon with the color and blendmode,
-     *  following the same "containment" rule as rectangles.
+     *  Fill the convex polygon with the paint, following the same "containment" rule as rects.
      */
     virtual void drawConvexPolygon(const GPoint[], int count, const GPaint&) = 0;
+
+    /**
+     *  Fill the path with the paint, interpreting the path using winding-fill (non-zero winding).
+     */
+    virtual void drawPath(const GPath&, const GPaint&) = 0;
 
     // Helpers
 

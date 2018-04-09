@@ -296,6 +296,7 @@ static void test_matrix_map(GTestStats* stats) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "tests_pa4.cpp"
+#include "tests_pa5.cpp"
 
 const GTestRec gTestRecs[] = {
     { test_clear,       "clear"         },
@@ -310,6 +311,11 @@ const GTestRec gTestRecs[] = {
 
     { test_filters,     "filters",          },
     { test_savelayesr,  "savelayer",        },
+
+    { test_path,        "path",             },
+    { test_path_rect,   "path_rect",        },
+    { test_path_rect,   "test_path_poly",   },
+    { test_path_transform, "path_transform" },
 
     { nullptr, nullptr },
 };

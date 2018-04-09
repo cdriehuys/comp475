@@ -39,11 +39,6 @@ static bool contains(const GRect& rect, float x, float y) {
     return rect.left() < x && x < rect.right() && rect.top() < y && y < rect.bottom();
 }
 
-static GRect offset(const GRect& rect, float dx, float dy) {
-    return GRect::MakeLTRB(rect.left() + dx, rect.top() + dy,
-                           rect.right() + dx, rect.bottom() + dy);
-}
-
 static bool hit_test(float x0, float y0, float x1, float y1) {
     const float dx = fabs(x1 - x0);
     const float dy = fabs(y1 - y0);
@@ -72,15 +67,6 @@ static void draw_corner(GCanvas* canvas, const GColor& c, float x, float y, floa
     canvas->fillRect(make_from_pts(GPoint::Make(x - 1, y), GPoint::Make(x + 1, y + dy)), c);
 }
 
-static void draw_hilite(GCanvas* canvas, const GRect& r) {
-    const float size = CORNER_SIZE;
-    GColor c = GColor::MakeARGB(1, 0, 0, 0);
-    draw_corner(canvas, c, r.fLeft, r.fTop, size, size);
-    draw_corner(canvas, c, r.fLeft, r.fBottom, size, -size);
-    draw_corner(canvas, c, r.fRight, r.fTop, -size, size);
-    draw_corner(canvas, c, r.fRight, r.fBottom, -size, -size);
-}
-
 static void constrain_color(GColor* c) {
     c->fA = std::max(std::min(c->fA, 1.f), 0.1f);
     c->fR = std::max(std::min(c->fR, 1.f), 0.f);
@@ -88,15 +74,148 @@ static void constrain_color(GColor* c) {
     c->fB = std::max(std::min(c->fB, 1.f), 0.f);
 }
 
+static void draw_point(GCanvas* canvas, GPoint p) {
+    canvas->drawRect(GRect::MakeLTRB(p.fX - 2, p.fY - 2, p.fX + 3, p.fY + 3), GPaint());
+}
+
+static void draw_line(GCanvas* canvas, GPoint p0, GPoint p1, GColor c, float width) {
+    GVector norm = { p1.y() - p0.y(), p0.x() - p1.x() };
+    float scale = width / 2 / norm.length();
+    norm.fX *= scale;
+    norm.fY *= scale;
+
+    GPoint quad[4] = { p0 + norm, p1 + norm, p1 - norm, p0 - norm };
+    canvas->drawConvexPolygon(quad, 4, GPaint(c));
+}
+
+
 class Shape {
 public:
+    Shape() {
+        fGradPts[0] = { 10, 10 };
+        fGradPts[1] = { 100, 80 };
+    }
+
     virtual ~Shape() {}
-    virtual void draw(GCanvas* canvas) {}
     virtual GRect getRect() = 0;
     virtual void setRect(const GRect&) {}
-    virtual GColor getColor() = 0;
-    virtual void setColor(const GColor&) {}
+
+    GColor getColor() {
+        if (fGradient) {
+            return fColors[0];
+        } else {
+            return this->onGetColor();
+        }
+    }
+
+    void setColor(const GColor& c) {
+        if (fGradient) {
+            for (int i = 0; i < fColors.size(); ++i) {
+                fColors[i].fA = c.fA;
+            }
+            this->rebuildGradient();
+        } else {
+            this->onSetColor(c);
+        }
+    }
+
+    void draw(GCanvas* canvas) {
+        GPaint paint;
+        this->updatePaint(&paint);
+        this->onDraw(canvas, paint);
+    }
+
+    virtual void drawHilite(GCanvas* canvas) {
+        this->drawBoundsHilite(canvas);
+        this->drawGradientHilite(canvas);
+    }
+
+    void toggleGradient() {
+        if (fGradient) {
+            fGradient = nullptr;
+        } else {
+            int n = (gRand.nextU() % 3) + 2;
+            fColors.clear();
+            for (int i = 0; i < n; ++i) {
+                fColors.push_back(rand_color());
+            }
+
+            GRect r = this->getRect();
+            fGradPts[0] = { r.fLeft + 10, r.fTop + 10 };
+            fGradPts[1] = { r.fRight - 10, r.fBottom - 10 };
+            this->rebuildGradient();
+        }
+    }
+
+    void offset(int dx, int dy) {
+        this->setRect(this->getRect().makeOffset(dx, dy));
+
+        if (fGradient) {
+            GMatrix::MakeTranslate(dx, dy).mapPoints(fGradPts, 2);
+            this->rebuildGradient();
+        }
+    }
+
+    void rebuildGradient() {
+        fGradient = GCreateLinearGradient(fGradPts[0], fGradPts[1],
+                                          fColors.data(), fColors.size());
+    }
+
+    virtual GClick* findClick(GPoint p, GWindow* wind) {
+        if (fGradient) {
+            int index = -1;
+            for (int i = 0; i < 2; ++i) {
+                if (hit_test(p.x(), p.y(), fGradPts[i].x(), fGradPts[i].y())) {
+                    index = i;
+                }
+            }
+            if (index >= 0) {
+                return new GClick(p, [this, wind, index](GClick* click) {
+                    fGradPts[index] = click->curr();
+                    this->rebuildGradient();
+                    wind->requestDraw();
+                });
+            }
+        }
+        return nullptr;
+    }
+
+protected:
+    virtual void onDraw(GCanvas* canvas, const GPaint&) {}
+    virtual GColor onGetColor() = 0;
+    virtual void onSetColor(const GColor&) {}
+
+    void updatePaint(GPaint* paint) {
+        paint->setColor(this->getColor());
+        if (fGradient) {
+            paint->setShader(fGradient.get());
+        }
+    }
+
+    void drawBoundsHilite(GCanvas* canvas) {
+        GRect r = this->getRect();
+        const float size = CORNER_SIZE;
+        GColor c = GColor::MakeARGB(1, 0, 0, 0);
+        draw_corner(canvas, c, r.fLeft, r.fTop, size, size);
+        draw_corner(canvas, c, r.fLeft, r.fBottom, size, -size);
+        draw_corner(canvas, c, r.fRight, r.fTop, -size, size);
+        draw_corner(canvas, c, r.fRight, r.fBottom, -size, -size);
+    }
+
+    void drawGradientHilite(GCanvas* canvas) {
+        if (fGradient) {
+            draw_line(canvas, fGradPts[0], fGradPts[1], {1,0,0,0}, 1.4f);
+            draw_point(canvas, fGradPts[0]);
+            draw_point(canvas, fGradPts[1]);
+        }
+    }
+
+    GPoint fGradPts[2];
+    std::vector<GColor> fColors;
+    std::unique_ptr<GShader> fGradient;
 };
+
+#include "draw_path.cpp"
 
 class RectShape : public Shape {
 public:
@@ -104,14 +223,14 @@ public:
         fRect = GRect::MakeXYWH(0, 0, 0, 0);
     }
 
-    void draw(GCanvas* canvas) override {
-        canvas->fillRect(fRect, fColor);
+    void onDraw(GCanvas* canvas, const GPaint& paint) override {
+        canvas->drawRect(fRect, paint);
     }
 
     GRect getRect() override { return fRect; }
     void setRect(const GRect& r) override { fRect = r; }
-    GColor getColor() override { return fColor; }
-    void setColor(const GColor& c) override { fColor = c; }
+    GColor onGetColor() override { return fColor; }
+    void onSetColor(const GColor& c) override { fColor = c; }
 
 private:
     GRect   fRect;
@@ -124,7 +243,7 @@ public:
         fRect = GRect::MakeXYWH(20, 20, 150, 150);
     }
 
-    void draw(GCanvas* canvas) override {
+    void onDraw(GCanvas* canvas, const GPaint&) override {
         GPaint paint;
 #if 0
         GMatrix inv, m = GMatrix::MakeScale(fRect.width() / fBM.width(),
@@ -152,8 +271,8 @@ public:
 
     GRect getRect() override { return fRect; }
     void setRect(const GRect& r) override { fRect = r; }
-    GColor getColor() override { return fColor; }
-    void setColor(const GColor& c) override { fColor = c; }
+    GColor onGetColor() override { return fColor; }
+    void onSetColor(const GColor& c) override { fColor = c; }
 
 private:
     GRect   fRect;
@@ -177,7 +296,7 @@ public:
         fBounds.setXYWH(100, 100, 150, 150);
     }
 
-    void draw(GCanvas* canvas) override {
+    void onDraw(GCanvas* canvas, const GPaint& paint) override {
         float sx = fBounds.width() * 0.5f;
         float sy = fBounds.height() * 0.5f;
         float cx = (fBounds.left() + fBounds.right()) * 0.5f;
@@ -185,14 +304,15 @@ public:
 
         GPoint* pts = new GPoint[fN];
         make_regular_poly(pts, fN, cx, cy, sx, sy);
+        fPaint.setShader(paint.getShader());
         canvas->drawConvexPolygon(pts, fN, fPaint);
         delete[] pts;
     }
     
     GRect getRect() override { return fBounds; }
     void setRect(const GRect& r) override { fBounds = r; }
-    GColor getColor() override { return fPaint.getColor(); }
-    void setColor(const GColor& c) override { fPaint.setColor(c); }
+    GColor onGetColor() override { return fPaint.getColor(); }
+    void onSetColor(const GColor& c) override { fPaint.setColor(c); }
 
 private:
     GPaint  fPaint;
@@ -213,6 +333,12 @@ static Shape* cons_up_shape(unsigned index) {
     if (index == 2) {
         int n = (int)(3 + gRand.nextF() * 12);
         return new ConvexShape(rand_color(), n);
+    }
+    if (index == 3) {
+        return new PolyShape({1, 0, 0.75, 1}, 2);
+    }
+    if (index == 4) {
+        return new PolyShape({0.5, 1, 0, 0}, 1);
     }
     return nullptr;
 }
@@ -238,7 +364,7 @@ protected:
             fList[i]->draw(canvas);
         }
         if (fShape) {
-            draw_hilite(canvas, fShape->getRect());
+            fShape->drawHilite(canvas);
         }
     }
 
@@ -280,6 +406,10 @@ protected:
                     this->updateTitle();
                     this->requestDraw();
                     return true;
+                case 'l':
+                    fShape->toggleGradient();
+                    this->requestDraw();
+                    return true;
                 default:
                     break;
             }
@@ -313,6 +443,9 @@ protected:
 
     GClick* onFindClickHandler(GPoint loc) override {
         if (fShape) {
+            if (GClick* click = fShape->findClick(loc, this)) {
+                return click;
+            }
             GPoint anchor;
             if (in_resize_corner(fShape->getRect(), loc.x(), loc.y(), &anchor)) {
                 return new GClick(loc, [this, anchor](GClick* click) {
@@ -330,7 +463,7 @@ protected:
                 return new GClick(loc, [this](GClick* click) {
                     const GPoint curr = click->curr();
                     const GPoint prev = click->prev();
-                    fShape->setRect(offset(fShape->getRect(), curr.x() - prev.x(), curr.y() - prev.y()));
+                    fShape->offset(curr.x() - prev.x(), curr.y() - prev.y());
                     this->updateTitle();
                     this->requestDraw();
                 });

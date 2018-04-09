@@ -19,6 +19,8 @@ class GWindow {
 public:
     int run();
 
+    void requestDraw();
+
 protected:
     GWindow(int initial_width, int initial_height);
     virtual ~GWindow();
@@ -34,7 +36,6 @@ protected:
     int height() const { return fHeight; }
     
     void setTitle(const char title[]);
-    void requestDraw();
     void drawOverlay(const GIRect* src, const GIRect* dst);
 
 

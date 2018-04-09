@@ -113,6 +113,12 @@ public:
         rect.setWH(w, h);
         return rect;
     }
+
+    GIRect makeOffset(int dx, int dy) const {
+        GIRect r = *this;
+        r.offset(dx, dy);
+        return r;
+    }
 };
 
 class GRect : public GTRect<float> {
@@ -137,6 +143,12 @@ public:
     
     static GRect Make(const GIRect& ir) {
         return MakeLTRB((float)ir.left(), (float)ir.top(), (float)ir.right(), (float)ir.bottom());
+    }
+
+    GRect makeOffset(float dx, float dy) const {
+        GRect r = *this;
+        r.offset(dx, dy);
+        return r;
     }
 
     GIRect round() const {

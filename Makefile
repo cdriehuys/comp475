@@ -11,13 +11,13 @@ G_INC = -Iinclude -Iapps -I/usr/local/include -L/usr/local/lib
 
 all: image tests bench
 
-image : $(G_SRC) apps/image.cpp apps/image_recs.cpp
+image : $(G_SRC) apps/image*
 	$(CC_DEBUG) $(G_INC) $(G_SRC) apps/image.cpp apps/image_recs.cpp -lpng -o image
 
-tests : $(G_SRC) apps/tests.cpp apps/tests_recs.cpp
+tests : $(G_SRC) apps/tests*
 	$(CC_DEBUG) $(G_INC) $(G_SRC) apps/tests.cpp apps/tests_recs.cpp -lpng -o tests
 
-bench : $(G_SRC) apps/bench.cpp apps/bench_recs.cpp apps/GTime.cpp
+bench : $(G_SRC) apps/bench* apps/GTime.cpp
 	$(CC_RELEASE) $(G_INC) $(G_SRC) apps/GTime.cpp apps/bench.cpp apps/bench_recs.cpp -lpng -o bench
 
 DRAW_SRC = apps/draw.cpp apps/GWindow.cpp apps/GTime.cpp

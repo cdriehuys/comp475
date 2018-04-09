@@ -24,7 +24,7 @@ struct GVector {
         return { fX + v.fX, fY + v.fY };
     }
 
-    GVector operator*(float s) {
+    GVector operator*(float s) const {
         return { fX * s, fY * s };
     }
 };
@@ -42,20 +42,28 @@ public:
         fY = y;
     }
 
+    bool operator==(const GPoint& p) const {
+        return fX == p.fX && fY == p.fY;
+    }
+    bool operator!=(const GPoint& p) const { return !(*this == p); }
+
     static GPoint Make(float x, float y) {
         GPoint pt = { x, y };
         return pt;
     }
 
-    GPoint operator+(const GVector& v) {
+    GPoint operator+(const GVector& v) const {
         return { fX + v.fX, fY + v.fY };
+    }
+    GPoint operator-(const GVector& v) const {
+        return { fX - v.fX, fY - v.fY };
     }
     GPoint& operator+=(const GVector& v) {
         *this = *this + v;
         return *this;
     }
 
-    GVector operator-(const GPoint& p) {
+    GVector operator-(const GPoint& p) const {
         return { fX - p.fX, fY - p.fY };
     }
 };

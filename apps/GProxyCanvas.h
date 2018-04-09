@@ -35,6 +35,17 @@ public:
         }
     }
 
+    void drawPath(const GPath& path, const GPaint& paint) override {
+        if (this->allowDraw()) {
+            fProxy->drawPath(path, paint);
+        }
+    }
+
+protected:
+    void onSaveLayer(const GRect* bounds, const GPaint& paint) override {
+        if (fProxy) { fProxy->saveLayer(bounds, paint); }
+    }
+
 private:
     GCanvas* fProxy;
 };

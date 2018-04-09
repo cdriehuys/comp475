@@ -6,7 +6,9 @@
 #define GShader_DEFINED
 
 #include <memory>
+#include "GColor.h"
 #include "GPixel.h"
+#include "GPoint.h"
 
 class GBitmap;
 class GMatrix;
@@ -37,5 +39,24 @@ public:
  *  Returns null if the either parameter is invalid.
  */
 std::unique_ptr<GShader> GCreateBitmapShader(const GBitmap&, const GMatrix& localInv);
+
+/**
+ *  Return a subclass of GShader that draws the specified gradient of [count] colors between
+ *  the two points. Color[0] corresponds to p0, and Color[count-1] corresponds to p1, and all
+ *  intermediate colors are evenly spaced between.
+ *
+ *  When returning a GPixel from shadeRow(), alpha should first be interpolated and then applied
+ *  to the r,g,b values to create a premul pixel.
+ *
+ *  If count == 1, the returned shader just draws a single color everywhere.
+ *  If count < 1, this should return nullptr.
+ */
+std::unique_ptr<GShader> GCreateLinearGradient(GPoint p0, GPoint p1, const GColor[], int count);
+
+static inline std::unique_ptr<GShader> GCreateLinearGradient(GPoint p0, GPoint p1,
+                                                             const GColor& c0, const GColor& c1) {
+    const GColor colors[] = { c0, c1 };
+    return GCreateLinearGradient(p0, p1, colors, 2);
+}
 
 #endif
