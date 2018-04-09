@@ -19,7 +19,9 @@
 
 class MyCanvas : public GCanvas {
 public:
-    MyCanvas(const GBitmap& device) : fDevice(device) {
+    MyCanvas(const GBitmap& device)
+            : fDevice(device)
+            , fBlitter(GBlitter(device)) {
         GMatrix identity;
         identity.setIdentity();
         mCTMStack.push(identity);
@@ -79,11 +81,9 @@ public:
         float leftX = left.curX;
         float rightX = right.curX;
 
-        GBlitter blitter = GBlitter(fDevice);
-
         // Loop through all the possible y-coordinates that could be drawn
         while (curY < lastY) {
-            blitter.blitRow(curY, GRoundToInt(leftX), GRoundToInt(rightX), paint);
+            fBlitter.blitRow(curY, GRoundToInt(leftX), GRoundToInt(rightX), paint);
             curY++;
 
             // After drawing, we check to see if we've completed either the
@@ -155,6 +155,7 @@ public:
 
 private:
     const GBitmap fDevice;
+    GBlitter fBlitter;
 
     std::stack<GMatrix> mCTMStack;
 };
