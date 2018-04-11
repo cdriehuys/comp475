@@ -5,6 +5,7 @@
 #include "GCanvas.h"
 #include "GColor.h"
 #include "GFilter.h"
+#include "GLayer.h"
 #include "GMath.h"
 #include "GMatrix.h"
 #include "GPath.h"
@@ -25,11 +26,11 @@ public:
             , fBlitter(GBlitter(device)) {
         GMatrix identity;
         identity.setIdentity();
-        mCTMStack.push(identity);
+        mLayers.push(GLayer(identity));
     }
 
     void concat(const GMatrix& matrix) override {
-        mCTMStack.top().preConcat(matrix);
+        mLayers.top().getCTM()->preConcat(matrix);
     }
 
     /**
@@ -41,12 +42,12 @@ public:
         // If the paint has a shader and we can't set its context, we can't
         // draw anything.
         if (paint.getShader() != nullptr
-                && !paint.getShader()->setContext(mCTMStack.top())) {
+                && !paint.getShader()->setContext(*mLayers.top().getCTM())) {
             return;
         }
 
         GPoint points[count];
-        mCTMStack.top().mapPoints(points, srcPoints, count);
+        mLayers.top().getCTM()->mapPoints(points, srcPoints, count);
 
         GRect bounds = GRect::MakeWH(fDevice.width(), fDevice.height());
         Edge storage[count * 3];
@@ -137,32 +138,24 @@ public:
         drawConvexPolygon(points, 4, paint);
     }
 
-    GMatrix getCTM() {
-        return mCTMStack.top();
-    }
-
     void onSaveLayer(const GRect* bounds, const GPaint&) override {
 
     }
 
     void restore() override {
-        mCTMStack.pop();
+        mLayers.pop();
     }
 
     void save() override {
-        GMatrix current = mCTMStack.top();
-        GMatrix copy(
-            current[0], current[1], current[2],
-            current[3], current[4], current[5]);
-
-        mCTMStack.push(copy);
+        GLayer current = mLayers.top();
+        mLayers.push(GLayer(*current.getCTM()));
     }
 
 private:
     const GBitmap fDevice;
     GBlitter fBlitter;
 
-    std::stack<GMatrix> mCTMStack;
+    std::stack<GLayer> mLayers;
 };
 
 
