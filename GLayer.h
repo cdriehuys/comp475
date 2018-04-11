@@ -9,17 +9,19 @@
 
 class GLayer {
 public:
-    GLayer(const GMatrix& ctm);
-    GLayer(const GMatrix& ctm, GRect bounds, const GPaint& paint);
+    const GBitmap fBitmap;
+
+    GLayer(const GBitmap& bitmap, const GMatrix& ctm);
+    GLayer(const GBitmap& bitmap, const GMatrix& ctm, GRect bounds, const GPaint& paint);
 
     GMatrix* getCTM() { return &fCTM; }
 
 private:
+    const GPaint fPaint;
+
     bool fIsLayer;
 
-    GBitmap fBitmap;
     GMatrix fCTM;
-    const GPaint fPaint;
     GRect bounds;
 };
 

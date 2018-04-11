@@ -21,12 +21,10 @@
 
 class MyCanvas : public GCanvas {
 public:
-    MyCanvas(const GBitmap& device)
-            : fDevice(device)
-            , fBlitter(GBlitter(device)) {
+    MyCanvas(const GBitmap& device) {
         GMatrix identity;
         identity.setIdentity();
-        mLayers.push(GLayer(identity));
+        mLayers.push(GLayer(device, identity));
     }
 
     void concat(const GMatrix& matrix) override {
@@ -39,17 +37,21 @@ public:
      * new polygon is drawn with respect to the pixels already on the screen.
      */
     void drawConvexPolygon(const GPoint srcPoints[], int count, const GPaint& paint) override {
+        GLayer layer = mLayers.top();
+
         // If the paint has a shader and we can't set its context, we can't
         // draw anything.
         if (paint.getShader() != nullptr
-                && !paint.getShader()->setContext(*mLayers.top().getCTM())) {
+                && !paint.getShader()->setContext(*layer.getCTM())) {
             return;
         }
 
         GPoint points[count];
-        mLayers.top().getCTM()->mapPoints(points, srcPoints, count);
+        layer.getCTM()->mapPoints(points, srcPoints, count);
 
-        GRect bounds = GRect::MakeWH(fDevice.width(), fDevice.height());
+        GRect bounds = GRect::MakeWH(
+            layer.fBitmap.width(),
+            layer.fBitmap.height());
         Edge storage[count * 3];
         Edge* edge = storage;
 
@@ -83,9 +85,11 @@ public:
         float leftX = left.curX;
         float rightX = right.curX;
 
+        GBlitter blitter = GBlitter(layer.fBitmap);
+
         // Loop through all the possible y-coordinates that could be drawn
         while (curY < lastY) {
-            fBlitter.blitRow(curY, GRoundToInt(leftX), GRoundToInt(rightX), paint);
+            blitter.blitRow(curY, GRoundToInt(leftX), GRoundToInt(rightX), paint);
             curY++;
 
             // After drawing, we check to see if we've completed either the
@@ -116,7 +120,8 @@ public:
      * Fill the entire canvas with a particular paint.
      */
     void drawPaint(const GPaint& paint) override {
-        GRect bounds = GRect::MakeWH(fDevice.width(), fDevice.height());
+        GBitmap bm = mLayers.top().fBitmap;
+        GRect bounds = GRect::MakeWH(bm.width(), bm.height());
         drawRect(bounds, paint);
     }
 
@@ -148,13 +153,10 @@ public:
 
     void save() override {
         GLayer current = mLayers.top();
-        mLayers.push(GLayer(*current.getCTM()));
+        mLayers.push(GLayer(current.fBitmap, *current.getCTM()));
     }
 
 private:
-    const GBitmap fDevice;
-    GBlitter fBlitter;
-
     std::stack<GLayer> mLayers;
 };
 

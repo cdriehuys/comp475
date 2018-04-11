@@ -2,7 +2,8 @@
 #include "GMatrix.h"
 
 
-GLayer::GLayer(const GMatrix& ctm) {
+GLayer::GLayer(const GBitmap& bitmap, const GMatrix& ctm)
+        : fBitmap(bitmap) {
     this->fIsLayer = false;
     this->fCTM = GMatrix(
         ctm[0], ctm[1], ctm[2],
@@ -10,6 +11,6 @@ GLayer::GLayer(const GMatrix& ctm) {
 }
 
 
-GLayer::GLayer(const GMatrix& ctm, GRect bounds, const GPaint& paint) {
+GLayer::GLayer(const GBitmap& bitmap, const GMatrix& ctm, GRect bounds, const GPaint& paint) {
 
 }
