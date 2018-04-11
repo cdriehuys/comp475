@@ -143,12 +143,59 @@ public:
         drawConvexPolygon(points, 4, paint);
     }
 
-    void onSaveLayer(const GRect* bounds, const GPaint&) override {
+    void onSaveLayer(const GRect* boundsPtr, const GPaint& paint) override {
+        GLayer layer = mLayers.top();
+        GBitmap oldBitmap = layer.fBitmap;
+        GRect bounds;
 
+        if (boundsPtr == nullptr) {
+            bounds = GRect::MakeWH(oldBitmap.width(), oldBitmap.height());
+        } else {
+            bounds = *boundsPtr;
+        }
+
+        GPoint pts[4] = {
+            GPoint::Make(bounds.left(), bounds.top()),
+            GPoint::Make(bounds.right(), bounds.top()),
+            GPoint::Make(bounds.right(), bounds.bottom()),
+            GPoint::Make(bounds.left(), bounds.bottom())
+        };
+        layer.getCTM()->mapPoints(pts, pts, 4);
+
+        float left = std::min(pts[0].fX, std::min(pts[1].fX, std::min(pts[2].fX, pts[3].fX)));
+        float right = std::max(pts[0].fX, std::max(pts[1].fX, std::max(pts[2].fX, pts[3].fX)));
+        float top = std::min(pts[0].fY, std::min(pts[1].fY, std::min(pts[2].fY, pts[3].fY)));
+        float bottom = std::max(pts[0].fY, std::max(pts[1].fY, std::max(pts[2].fY, pts[3].fY)));
+
+        GIRect transformedBounds = GRect::MakeLTRB(left, top, right, bottom).round();
+        transformedBounds.setLTRB(
+            std::max(transformedBounds.left(), 0),
+            std::max(transformedBounds.top(), 0),
+            std::min(transformedBounds.right(), oldBitmap.width() - 1),
+            std::min(transformedBounds.bottom(), oldBitmap.height() - 1));
+
+        // Bitmap initialization taken from:
+        // apps/image.cpp::setup_bitmap
+        GBitmap bitmap;
+        size_t rb = transformedBounds.width() * sizeof(GPixel);
+        bitmap.reset(
+            transformedBounds.width(),
+            transformedBounds.height(),
+            rb,
+            (GPixel*)calloc(transformedBounds.height(), rb),
+            GBitmap::kNo_IsOpaque);
+
+        mLayers.push(GLayer(bitmap, *layer.getCTM(), transformedBounds, paint));
     }
 
     void restore() override {
+        GLayer layer = mLayers.top();
         mLayers.pop();
+        GBitmap base = mLayers.top().fBitmap;
+
+        if (layer.fIsLayer) {
+            layer.draw(base);
+        }
     }
 
     void save() override {
