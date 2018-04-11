@@ -7,6 +7,7 @@
 #include "GFilter.h"
 #include "GMath.h"
 #include "GMatrix.h"
+#include "GPath.h"
 #include "GPixel.h"
 #include "GPoint.h"
 #include "GRect.h"
@@ -116,6 +117,10 @@ public:
     void drawPaint(const GPaint& paint) override {
         GRect bounds = GRect::MakeWH(fDevice.width(), fDevice.height());
         drawRect(bounds, paint);
+    }
+
+    void drawPath(const GPath& path, const GPaint& paint) override {
+
     }
 
     /**
