@@ -19,16 +19,43 @@
 #include "ColorUtils.h"
 
 
+float manyMax(float* nums, int count) {
+    GASSERT(count >= 1);
+
+    float max = nums[0];
+    for (int i = 1; i < count; ++i) {
+        max = std::max(max, nums[i]);
+    }
+
+    return max;
+}
+
+
+float manyMin(float* nums, int count) {
+    GASSERT(count >= 1);
+
+    float min = nums[0];
+    for (int i = 1; i < count; ++i) {
+        min = std::min(min, nums[i]);
+    }
+
+    return min;
+}
+
+
 class MyCanvas : public GCanvas {
 public:
     MyCanvas(const GBitmap& device) {
         GMatrix identity;
         identity.setIdentity();
-        mLayers.push(GLayer(device, identity));
+
+        GIRect bounds = GIRect::MakeWH(device.width(), device.height());
+
+        mLayers.push(GLayer(&device, identity, bounds));
     }
 
     void concat(const GMatrix& matrix) override {
-        mLayers.top().getCTM()->preConcat(matrix);
+        mLayers.top().getCTM().preConcat(matrix);
     }
 
     /**
@@ -42,16 +69,16 @@ public:
         // If the paint has a shader and we can't set its context, we can't
         // draw anything.
         if (paint.getShader() != nullptr
-                && !paint.getShader()->setContext(*layer.getCTM())) {
+                && !paint.getShader()->setContext(layer.getCTM())) {
             return;
         }
 
         GPoint points[count];
-        layer.getCTM()->mapPoints(points, srcPoints, count);
+        layer.getCTM().mapPoints(points, srcPoints, count);
 
         GRect bounds = GRect::MakeWH(
-            layer.fBitmap.width(),
-            layer.fBitmap.height());
+            layer.getBitmap().width(),
+            layer.getBitmap().height());
         Edge storage[count * 3];
         Edge* edge = storage;
 
@@ -85,7 +112,7 @@ public:
         float leftX = left.curX;
         float rightX = right.curX;
 
-        GBlitter blitter = GBlitter(layer.fBitmap);
+        GBlitter blitter = GBlitter(layer.getBitmap());
 
         // Loop through all the possible y-coordinates that could be drawn
         while (curY < lastY) {
@@ -120,7 +147,7 @@ public:
      * Fill the entire canvas with a particular paint.
      */
     void drawPaint(const GPaint& paint) override {
-        GBitmap bm = mLayers.top().fBitmap;
+        GBitmap bm = mLayers.top().getBitmap();
         GRect bounds = GRect::MakeWH(bm.width(), bm.height());
         drawRect(bounds, paint);
     }
@@ -144,63 +171,74 @@ public:
     }
 
     void onSaveLayer(const GRect* boundsPtr, const GPaint& paint) override {
-        GLayer layer = mLayers.top();
-        GBitmap oldBitmap = layer.fBitmap;
-        GRect bounds;
-
+        GIRect bounds;
+        GIRect prevBounds = mLayers.top().getBounds();
         if (boundsPtr == nullptr) {
-            bounds = GRect::MakeWH(oldBitmap.width(), oldBitmap.height());
+            bounds = GIRect::MakeWH(prevBounds.width(), prevBounds.height());
         } else {
-            bounds = *boundsPtr;
+            GPoint points[4] = {
+                GPoint::Make(boundsPtr->left(), boundsPtr->top()),
+                GPoint::Make(boundsPtr->right(), boundsPtr->top()),
+                GPoint::Make(boundsPtr->right(), boundsPtr->bottom()),
+                GPoint::Make(boundsPtr->left(), boundsPtr->bottom())
+            };
+            mLayers.top().getCTM().mapPoints(points, points, 4);
+
+            float xVals[4], yVals[4];
+            for (int i = 0; i < 4; ++i) {
+                xVals[i] = points[i].fX;
+                yVals[i] = points[i].fY;
+            }
+
+            float left = manyMin(xVals, 4);
+            float top = manyMin(yVals, 4);
+            float right = manyMax(xVals, 4);
+            float bottom = manyMax(yVals, 4);
+
+            GRect floatBounds = GRect::MakeLTRB(left, top, right, bottom);
+            bounds = floatBounds.round();
+
+            if (!bounds.intersect(prevBounds)) {
+                bounds = GIRect::MakeWH(0, 0);
+            }
         }
-
-        GPoint pts[4] = {
-            GPoint::Make(bounds.left(), bounds.top()),
-            GPoint::Make(bounds.right(), bounds.top()),
-            GPoint::Make(bounds.right(), bounds.bottom()),
-            GPoint::Make(bounds.left(), bounds.bottom())
-        };
-        layer.getCTM()->mapPoints(pts, pts, 4);
-
-        float left = std::min(pts[0].fX, std::min(pts[1].fX, std::min(pts[2].fX, pts[3].fX)));
-        float right = std::max(pts[0].fX, std::max(pts[1].fX, std::max(pts[2].fX, pts[3].fX)));
-        float top = std::min(pts[0].fY, std::min(pts[1].fY, std::min(pts[2].fY, pts[3].fY)));
-        float bottom = std::max(pts[0].fY, std::max(pts[1].fY, std::max(pts[2].fY, pts[3].fY)));
-
-        GIRect transformedBounds = GRect::MakeLTRB(left, top, right, bottom).round();
-        transformedBounds.setLTRB(
-            std::max(transformedBounds.left(), 0),
-            std::max(transformedBounds.top(), 0),
-            std::min(transformedBounds.right(), oldBitmap.width() - 1),
-            std::min(transformedBounds.bottom(), oldBitmap.height() - 1));
 
         // Bitmap initialization taken from:
         // apps/image.cpp::setup_bitmap
         GBitmap bitmap;
-        size_t rb = transformedBounds.width() * sizeof(GPixel);
+        size_t rowBytes = bounds.width() * sizeof(GPixel);
         bitmap.reset(
-            transformedBounds.width(),
-            transformedBounds.height(),
-            rb,
-            (GPixel*)calloc(transformedBounds.height(), rb),
+            bounds.width(),
+            bounds.height(),
+            rowBytes,
+            (GPixel*)calloc(bounds.height(), rowBytes),
             GBitmap::kNo_IsOpaque);
 
-        mLayers.push(GLayer(bitmap, *layer.getCTM(), transformedBounds, paint));
+        GMatrix oldCTM = mLayers.top().getCTM();
+        GMatrix newCTM = GMatrix(
+            oldCTM[0], oldCTM[1], oldCTM[2],
+            oldCTM[3], oldCTM[4], oldCTM[5]);
+        newCTM.postTranslate(
+            prevBounds.left() - bounds.left(),
+            prevBounds.top() - bounds.top());
+
+        GLayer newLayer = GLayer(bitmap, newCTM, bounds, paint);
+        mLayers.push(newLayer);
     }
 
     void restore() override {
-        GLayer layer = mLayers.top();
+        GLayer top = mLayers.top();
         mLayers.pop();
-        GBitmap base = mLayers.top().fBitmap;
+        GLayer base = mLayers.top();
 
-        if (layer.fIsLayer) {
-            layer.draw(base);
+        if (top.isLayer()) {
+            top.draw(&base.getBitmap());
         }
     }
 
     void save() override {
         GLayer current = mLayers.top();
-        mLayers.push(GLayer(current.fBitmap, *current.getCTM()));
+        mLayers.push(GLayer(&current.getBitmap(), current.getCTM(), current.getBounds()));
     }
 
 private:

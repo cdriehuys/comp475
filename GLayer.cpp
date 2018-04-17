@@ -1,40 +1,57 @@
+#include "GFilter.h"
 #include "GLayer.h"
 #include "GMatrix.h"
+#include "GPaint.h"
+#include "GPixel.h"
+#include "GRect.h"
 
 #include "Blend.h"
 
 
-GLayer::GLayer(const GBitmap& bitmap, const GMatrix& ctm)
-        : fBitmap(bitmap) {
+// Only used to store a CTM
+GLayer::GLayer(const GBitmap* bitmap, GMatrix matrix, GIRect bounds) {
+    this->fBitmap = *bitmap;
+    this->fCTM = matrix;
+    this->fBounds = bounds;
+
     this->fIsLayer = false;
-    this->fCTM = GMatrix(
-        ctm[0], ctm[1], ctm[2],
-        ctm[3], ctm[4], ctm[5]);
 }
 
 
-GLayer::GLayer(const GBitmap& bitmap, const GMatrix& ctm, GIRect bounds, const GPaint& paint)
-        : fBitmap(bitmap)
-        , fBounds(bounds)
-        , fPaint(paint) {
+// Used as a separate drawing surface
+GLayer::GLayer(GBitmap& bitmap, GMatrix matrix, GIRect bounds, GPaint paint) {
+    this->fBitmap = bitmap;
+    this->fCTM = matrix;
+    this->fBounds = bounds;
+    this->fPaint = paint;
+
     this->fIsLayer = true;
-    this->fCTM = GMatrix(
-        ctm[0], ctm[1], ctm[2],
-        ctm[3], ctm[4], ctm[5]);
 }
 
 
-void GLayer::draw(const GBitmap& base) {
+void GLayer::draw(GBitmap* base) {
     GIRect bounds = this->fBounds;
     int xOffset = bounds.left();
     int yOffset = bounds.top();
 
     BlendProc blendProc = Blend_GetProc(this->fPaint.getBlendMode());
+    GFilter* filter = this->fPaint.getFilter();
 
     for (int y = 0; y < this->fBitmap.height(); ++y) {
-        for (int x = 0; x < this->fBitmap.width(); ++x) {
-            GPixel* addr = base.getAddr(x + xOffset, y + yOffset);
-            *addr = blendProc(*this->fBitmap.getAddr(x, y), *addr);
+        int width = this->fBitmap.width();
+        GPixel* row = (GPixel*) malloc(width * sizeof(GPixel));
+
+        if (filter == nullptr) {
+            row = this->fBitmap.getAddr(0, y);
+        } else {
+            filter->filter(row, this->fBitmap.getAddr(0, y), width);
+        }
+
+        for (int x = 0; x < width; ++x) {
+            GPixel src = row[x];
+            GPixel* dest = base->getAddr(x + xOffset, y + yOffset);
+
+            *dest = blendProc(src, *dest);
         }
     }
 }
