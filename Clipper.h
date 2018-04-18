@@ -16,6 +16,7 @@ struct Edge {
     int bottomY;
     float curX;
     float dxdy;
+    short wind;
 
     /**
      * Initialize a new edge from two points.

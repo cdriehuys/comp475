@@ -86,7 +86,52 @@ public:
     }
 
     void drawPath(const GPath& path, const GPaint& paint) override {
+        GLayer layer = mLayers.top();
 
+        // If the paint has a shader and we can't set its context, we can't
+        // draw anything.
+        if (paint.getShader() != nullptr
+                && !paint.getShader()->setContext(layer.getCTM())) {
+            return;
+        }
+
+        GPoint points[2 * path.countPoints()];
+        int edgeCount = 0;
+        GPath::Edger edger = GPath::Edger(path);
+
+        GPath::Verb verb;
+        do {
+            verb = edger.next(&points[edgeCount * 2]);
+
+            if (verb == GPath::Verb::kLine) {
+                edgeCount++;
+            }
+        } while (verb != GPath::Verb::kDone);
+
+        layer.getCTM().mapPoints(points, points, 2 * edgeCount);
+
+        GRect bounds = GRect::MakeWH(
+            layer.getBitmap().width(),
+            layer.getBitmap().height());
+        Edge storage[3 * edgeCount];
+        Edge* edge = storage;
+
+        for (int i = 0; i < edgeCount; ++i) {
+            GPoint p0 = points[2 * i];
+            GPoint p1 = points[2 * i + 1];
+
+            edge = clipLine(p0, p1, bounds, edge);
+        }
+
+        // Recalculate edge count after clipping
+        edgeCount = edge - storage;
+        if (edgeCount == 0) {
+            return;
+        }
+
+        GBlitter blitter = GBlitter(layer.getBitmap(), paint);
+
+        GScanConverter::scan(storage, edgeCount, blitter);
     }
 
     /**
