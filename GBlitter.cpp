@@ -8,19 +8,19 @@
 #include "ColorUtils.h"
 
 
-void GBlitter::blitRow(int y, int xLeft, int xRight, const GPaint& paint) {
+void GBlitter::blitRow(int y, int xLeft, int xRight) {
     xLeft = std::max(0, xLeft);
     xRight = std::min(this->fBitmap.width(), xRight);
 
-    BlendProc blendProc = Blend_GetProc(paint.getBlendMode());
+    BlendProc blendProc = Blend_GetProc(this->fPaint.getBlendMode());
 
-    GShader* shader = paint.getShader();
+    GShader* shader = this->fPaint.getShader();
     if (shader == nullptr) {
-        GColor color = paint.getColor().pinToUnit();
+        GColor color = this->fPaint.getColor().pinToUnit();
         GPixel source[1] = {colorToPixel(color)};
 
-        if (paint.getFilter() != nullptr) {
-            paint.getFilter()->filter(source, source, 1);
+        if (this->fPaint.getFilter() != nullptr) {
+            this->fPaint.getFilter()->filter(source, source, 1);
         }
 
         for (int x = xLeft; x < xRight; ++x) {
@@ -32,8 +32,8 @@ void GBlitter::blitRow(int y, int xLeft, int xRight, const GPaint& paint) {
         GPixel shaded[count];
         shader->shadeRow(xLeft, y, count, shaded);
 
-        if (paint.getFilter() != nullptr) {
-            paint.getFilter()->filter(shaded, shaded, count);
+        if (this->fPaint.getFilter() != nullptr) {
+            this->fPaint.getFilter()->filter(shaded, shaded, count);
         }
 
         for (int x = xLeft; x < xRight; ++x) {

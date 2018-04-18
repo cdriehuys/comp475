@@ -6,12 +6,12 @@
 #include "GColor.h"
 #include "GFilter.h"
 #include "GLayer.h"
-#include "GMath.h"
 #include "GMatrix.h"
 #include "GPath.h"
 #include "GPixel.h"
 #include "GPoint.h"
 #include "GRect.h"
+#include "GScanConverter.h"
 #include "GShader.h"
 
 #include "Blend.h"
@@ -71,53 +71,9 @@ public:
             return;
         }
 
-        GASSERT(edgeCount >= 2);
+        GBlitter blitter = GBlitter(layer.getBitmap(), paint);
 
-        std::sort(storage, storage + edgeCount);
-
-        int lastY = storage[edgeCount - 1].bottomY;
-
-        // Set up our initial left and right boundary edges
-        Edge left = storage[0];
-        Edge right = storage[1];
-
-        // Track index of next edge position
-        int next = 2;
-
-        float curY = left.topY;
-
-        float leftX = left.curX;
-        float rightX = right.curX;
-
-        GBlitter blitter = GBlitter(layer.getBitmap());
-
-        // Loop through all the possible y-coordinates that could be drawn
-        while (curY < lastY) {
-            blitter.blitRow(curY, GRoundToInt(leftX), GRoundToInt(rightX), paint);
-            curY++;
-
-            // After drawing, we check to see if we've completed either the
-            // left or right edge. If we have, we replace it with the next
-            // edge.
-
-            if (curY > left.bottomY) {
-                left = storage[next];
-                next++;
-
-                leftX = left.curX;
-            } else {
-                leftX += left.dxdy;
-            }
-
-            if (curY > right.bottomY) {
-                right = storage[next];
-                next++;
-
-                rightX = right.curX;
-            } else {
-                rightX += right.dxdy;
-            }
-        }
+        GScanConverter::scan(storage, edgeCount, blitter);
     }
 
     /**

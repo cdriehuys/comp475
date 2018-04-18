@@ -13,8 +13,12 @@ public:
      * Args:
      *     bitmap:
      *         The bitmap that gets drawn to.
+     *     paint:
+     *         The paint used by the blitter.
      */
-    GBlitter(const GBitmap& bitmap) : fBitmap(bitmap) {}
+    GBlitter(const GBitmap& bitmap, const GPaint& paint)
+        : fBitmap(bitmap)
+        , fPaint(paint) {}
 
     /**
      * Draw a row to the blitter's bitmap.
@@ -29,10 +33,11 @@ public:
      *     paint:
      *         The paint to draw the row with.
      */
-    void blitRow(int y, int xLeft, int xRight, const GPaint& paint);
+    void blitRow(int y, int xLeft, int xRight);
 
 private:
     const GBitmap fBitmap;
+    const GPaint fPaint;
 };
 
 
