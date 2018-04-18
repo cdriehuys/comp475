@@ -7,11 +7,7 @@
 #include "GShader.h"
 
 #include "ColorUtils.h"
-
-
-static inline float clamp(float val, float min, float max) {
-    return std::max(min, std::min(max, val));
-}
+#include "MathUtils.h"
 
 
 class GLinearGradient : public GShader {
