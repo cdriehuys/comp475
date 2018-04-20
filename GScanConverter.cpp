@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
 #include "GBlitter.h"
@@ -82,6 +83,19 @@ void resortBackwards(Edge* edge, std::vector<Edge*>& edges) {
 }
 
 
+void printEdge(Edge& e) {
+    float x0 = e.curX;
+    float y0 = e.topY;
+    float y1 = e.bottomY;
+    float x1 = x0 + (y1 - y0) * e.dxdy;
+
+    std::cout << "Edge:\n";
+    std::cout << "  Winding: " << e.wind << "\n";
+    std::cout << "  Coordinates: (" << x0 << ", " << y0 << ") to (" << x1 << ", " << y1 << ")\n";
+
+}
+
+
 // Note that unlike the simple scan converter, this one is "destructive"
 // because it manipulates each edge's 'curX' property. This is unlikely to
 // matter since we don't do anything with the edges after drawing them.
@@ -93,6 +107,7 @@ void GScanConverter::scanComplex(Edge* edges, int count, GBlitter& blitter) {
     std::vector<Edge*> edgeVec;
     for (int i = 0; i < count; ++i) {
         edgeVec.push_back(&edges[i]);
+        printEdge(edges[i]);
     }
 
     int minY = edgeVec.front()->topY;

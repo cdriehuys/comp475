@@ -26,12 +26,14 @@ struct Edge {
      *         The first point describing the edge.
      *     p1:
      *         The second point describing the edge.
+     *     wind:
+     *         The edges initial winding value.
      *
      * Returns:
      *     A boolean indicating if the edge is meaningful. For example, edges
      *     that don't cross a pixel center vertically are not meaningful.
      */
-    bool init(GPoint p0, GPoint p1);
+    bool init(GPoint p0, GPoint p1, int wind);
 
     /**
      * Determine if the edge is "less than" another edge.

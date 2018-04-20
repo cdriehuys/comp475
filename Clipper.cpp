@@ -1,8 +1,8 @@
 #include "Clipper.h"
 
 
-bool Edge::init(GPoint p0, GPoint p1) {
-    this->wind = 1;
+bool Edge::init(GPoint p0, GPoint p1, int wind) {
+    this->wind = wind;
 
     // Ensure p0.y <= p1.y
     if (p0.y() > p1.y()) {
@@ -48,9 +48,12 @@ bool Edge::operator<(const Edge& other) {
 
 
 Edge* clipLine(GPoint p0, GPoint p1, GRect bounds, Edge* edge) {
+    int wind = 1;
+
     // Ensure p0.y <= p1.y
     if (p0.y() > p1.y()) {
         std::swap(p0, p1);
+        wind = -wind;
     }
 
     // We can discard edges that are completely out of the clipping region in
@@ -74,20 +77,21 @@ Edge* clipLine(GPoint p0, GPoint p1, GRect bounds, Edge* edge) {
     // Ensure p0.x <= p1.x
     if (p0.x() > p1.x()) {
         std::swap(p0, p1);
+        wind = -wind;
     }
 
     // If we're entirely outside the left edge, we simply add the projection of
     // the edge onto the left bound.
     if (p1.x() <= bounds.left()) {
         p0.fX = p1.fX = bounds.left();
-        return edge + edge->init(p0, p1);
+        return edge + edge->init(p0, p1, wind);
     }
 
     // Similarly, if we're entirely outside the right edge, we only add the
     // projection back onto the right bound.
     if (p0.x() >= bounds.right()) {
         p0.fX = p1.fX = bounds.right();
-        return edge + edge->init(p0, p1);
+        return edge + edge->init(p0, p1, wind);
     }
 
     // Handle clipping and projection onto the left boundary
@@ -95,7 +99,8 @@ Edge* clipLine(GPoint p0, GPoint p1, GRect bounds, Edge* edge) {
         float newY = p0.y() + (bounds.left() - p0.x()) * (p1.y() - p0.y()) / (p1.x() - p0.x());
         edge += edge->init(
             GPoint::Make(bounds.left(), p0.y()),
-            GPoint::Make(bounds.left(), newY));
+            GPoint::Make(bounds.left(), newY),
+            wind);
 
         p0.set(bounds.left(), newY);
     }
@@ -105,11 +110,12 @@ Edge* clipLine(GPoint p0, GPoint p1, GRect bounds, Edge* edge) {
         float newY = p1.y() - (p1.x() - bounds.right()) * (p1.y() - p0.y()) / (p1.x() - p0.x());
         edge += edge->init(
             GPoint::Make(bounds.right(), newY),
-            GPoint::Make(bounds.right(), p1.y()));
+            GPoint::Make(bounds.right(), p1.y()),
+            wind);
 
         p1.set(bounds.right(), newY);
     }
 
     // Now that we've clipped the segment, we make an edge from what's left.
-    return edge + edge->init(p0, p1);
+    return edge + edge->init(p0, p1, wind);
 }
