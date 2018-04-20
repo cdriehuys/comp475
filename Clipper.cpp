@@ -2,7 +2,7 @@
 
 
 bool Edge::init(GPoint p0, GPoint p1) {
-    this->wind = (p0.y() <= p1.y()) ? 1 : -1;
+    this->wind = 1;
 
     // Ensure p0.y <= p1.y
     if (p0.y() > p1.y()) {

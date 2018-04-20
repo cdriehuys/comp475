@@ -131,7 +131,7 @@ public:
 
         GBlitter blitter = GBlitter(layer.getBitmap(), paint);
 
-        GScanConverter::scan(storage, edgeCount, blitter);
+        GScanConverter::scanComplex(storage, edgeCount, blitter);
     }
 
     /**

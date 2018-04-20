@@ -9,10 +9,6 @@
 
 
 void GBlitter::blitRow(int y, int xLeft, int xRight) {
-    if (xLeft >= xRight) {
-        return;
-    }
-
     xLeft = std::max(0, xLeft);
     xRight = std::min(this->fBitmap.width(), xRight);
 
