@@ -9,6 +9,7 @@
 
 
 void GBlitter::blitRow(int y, int xLeft, int xRight) {
+    GASSERT(xLeft <= xRight);
     xLeft = std::max(0, xLeft);
     xRight = std::min(this->fBitmap.width(), xRight);
 
@@ -29,7 +30,7 @@ void GBlitter::blitRow(int y, int xLeft, int xRight) {
         }
     } else {
         int count = xRight - xLeft;
-        GPixel shaded[count];
+        GPixel* shaded = (GPixel*) malloc(count * sizeof(GPixel));
         shader->shadeRow(xLeft, y, count, shaded);
 
         if (this->fPaint.getFilter() != nullptr) {
@@ -40,5 +41,7 @@ void GBlitter::blitRow(int y, int xLeft, int xRight) {
             GPixel* addr = this->fBitmap.getAddr(x, y);
             *addr = blendProc(shaded[x - xLeft], *addr);
         }
+
+        free(shaded);
     }
 }

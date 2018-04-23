@@ -118,7 +118,7 @@ void GScanConverter::scanComplex(Edge* edges, int count, GBlitter& blitter) {
         Edge* edge = edgeVec.front();
         Edge* next;
 
-        int x0, x1;
+        int x0 = 0, x1 = 0;
 
         while (edge->topY <= y) {
             if (wind == 0) {
@@ -129,6 +129,9 @@ void GScanConverter::scanComplex(Edge* edges, int count, GBlitter& blitter) {
 
             if (wind == 0) {
                 x1 = GRoundToInt(edge->curX);
+                if (x0 > x1) {
+                    std::swap(x0, x1);
+                }
                 blitter.blitRow(y, x0, x1);
             }
 

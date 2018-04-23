@@ -29,6 +29,10 @@ public:
             dy, dx, p0.fY);
     }
 
+    ~GLinearGradient() {
+        free(fColors);
+    }
+
     bool isOpaque() override {
         return false;
     }
@@ -45,16 +49,16 @@ public:
             float t = clamp(point.fX, 0.0f, 1.0f);
 
             if (t == 0) {
-                row[i] = colorToPixel(fColors[0]);
+                row[i] = colorToPixel(fColors[0].pinToUnit());
             } else if (t == 1) {
-                row[i] = colorToPixel(fColors[fColorCount - 1]);
+                row[i] = colorToPixel(fColors[fColorCount - 1].pinToUnit());
             } else {
                 int index = floor(t * (fColorCount - 1));
                 float span = 1.0f / (fColorCount - 1);
                 float start = index * span;
 
-                GColor c1 = fColors[index];
-                GColor c2 = fColors[index + 1];
+                GColor c1 = fColors[index].pinToUnit();
+                GColor c2 = fColors[index + 1].pinToUnit();
 
                 t = clamp((t - start) / span, 0.0f, 1.0f);
 

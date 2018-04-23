@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "GFilter.h"
 #include "GLayer.h"
 #include "GMatrix.h"
