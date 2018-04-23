@@ -95,16 +95,36 @@ public:
             return;
         }
 
-        GPoint points[2 * path.countPoints()];
+        GPoint points[6 * path.countPoints()];
         int edgeCount = 0;
         GPath::Edger edger = GPath::Edger(path);
 
         GPath::Verb verb;
         do {
-            verb = edger.next(&points[edgeCount * 2]);
+            GPoint nextPts[4];
+            verb = edger.next(nextPts);
 
             if (verb == GPath::Verb::kLine) {
+                points[2 * edgeCount] = nextPts[0];
+                points[2 * edgeCount + 1] = nextPts[1];
                 edgeCount++;
+            } else if (verb == GPath::Verb::kCubic) {
+                // points[2 * edgeCount] = nextPts[0];
+                // points[2 * edgeCount + 1] = nextPts[1];
+                // edgeCount++;
+                // points[2 * edgeCount] = nextPts[1];
+                // points[2 * edgeCount + 1] = nextPts[2];
+                // edgeCount++;
+                // points[2 * edgeCount] = nextPts[2];
+                // points[2 * edgeCount + 1] = nextPts[3];
+                // edgeCount++;
+            } else if (verb == GPath::Verb::kQuad) {
+                // points[2 * edgeCount] = nextPts[0];
+                // points[2 * edgeCount + 1] = nextPts[1];
+                // edgeCount++;
+                // points[2 * edgeCount] = nextPts[1];
+                // points[2 * edgeCount + 1] = nextPts[2];
+                // edgeCount++;
             }
         } while (verb != GPath::Verb::kDone);
 

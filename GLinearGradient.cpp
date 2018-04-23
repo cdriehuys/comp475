@@ -79,7 +79,12 @@ private:
 };
 
 
-std::unique_ptr<GShader> GCreateLinearGradient(GPoint p0, GPoint p1, const GColor colors[], int count) {
+std::unique_ptr<GShader> GCreateLinearGradient(
+        GPoint p0,
+        GPoint p1,
+        const GColor colors[],
+        int count,
+        GShader::TileMode tile) {
     if (count < 1) {
         return nullptr;
     }

@@ -48,7 +48,7 @@ private:
 };
 
 
-std::unique_ptr<GShader> GCreateBitmapShader(const GBitmap& bitmap, const GMatrix& localInv) {
+std::unique_ptr<GShader> GCreateBitmapShader(const GBitmap& bitmap, const GMatrix& localInv, GShader::TileMode tile) {
     if (!bitmap.pixels()) {
         return nullptr;
     }

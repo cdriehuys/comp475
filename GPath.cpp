@@ -6,6 +6,37 @@
 #include "MathUtils.h"
 
 
+void GPath::ChopCubicAt(const GPoint src[4], GPoint dst[7], float t) {
+    dst[0] = src[0];
+    dst[1] = src[1];
+    dst[2] = src[2];
+    dst[3] = src[3];
+    dst[4] = src[3];
+    dst[5] = src[3];
+    dst[6] = src[3];
+}
+
+
+void GPath::ChopQuadAt(const GPoint src[3], GPoint dst[5], float t) {
+    dst[0] = src[0];
+    dst[1] = src[1];
+    dst[2] = src[2];
+    dst[3] = src[2];
+    dst[4] = src[2];
+}
+
+
+GPath& GPath::addCircle(GPoint center, float radius, Direction dir) {
+    GRect rect = GRect::MakeLTRB(
+        center.x() - radius / 2,
+        center.y() - radius / 2,
+        center.x() + radius / 2,
+        center.y() + radius/ 2);
+
+    return this->addRect(rect, dir);
+}
+
+
 GPath& GPath::addPolygon(const GPoint pts[], int count) {
     if (count <= 1) { return *this; }
 

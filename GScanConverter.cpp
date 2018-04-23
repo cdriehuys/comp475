@@ -100,14 +100,14 @@ void printEdge(Edge& e) {
 // because it manipulates each edge's 'curX' property. This is unlikely to
 // matter since we don't do anything with the edges after drawing them.
 void GScanConverter::scanComplex(Edge* edges, int count, GBlitter& blitter) {
-    GASSERT(count >= 2);
+    // GASSERT(count >= 2);
 
     std::sort(edges, edges + count);
 
     std::vector<Edge*> edgeVec;
     for (int i = 0; i < count; ++i) {
         edgeVec.push_back(&edges[i]);
-        printEdge(edges[i]);
+        // printEdge(edges[i]);
     }
 
     int minY = edgeVec.front()->topY;
