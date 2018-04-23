@@ -5,9 +5,10 @@
 
 class BitmapShader : public GShader {
 public:
-    BitmapShader(const GBitmap& bitmap, const GMatrix& localInv)
+    BitmapShader(const GBitmap& bitmap, const GMatrix& localInv, GShader::TileMode tile)
         : fSourceBitmap(bitmap)
-        , fLocalMatrix(localInv) {}
+        , fLocalMatrix(localInv)
+        , fTile(tile) {}
 
     bool isOpaque() override {
         return false;
@@ -30,6 +31,38 @@ public:
             int sourceX = GRoundToInt(local.fX);
             int sourceY = GRoundToInt(local.fY);
 
+            if (fTile == TileMode::kRepeat) {
+                sourceX %= fSourceBitmap.width();
+                if (sourceX < 0) {
+                    sourceX += fSourceBitmap.width();
+                }
+
+                sourceY %= fSourceBitmap.height();
+                if (sourceY < 0) {
+                    sourceY += fSourceBitmap.height();
+                }
+            } else if (fTile == TileMode::kMirror) {
+                float x1 = local.fX / fSourceBitmap.width();
+                float y1 = local.fY / fSourceBitmap.height();
+
+                x1 *= .5;
+                x1 = x1 - floor(x1);
+                if (x1 > .5) {
+                    x1 = 1 - x1;
+                }
+                x1 *= 2;
+
+                y1 *= .5;
+                y1 = y1 - floor(y1);
+                if (y1 > .5) {
+                    y1 = 1 - y1;
+                }
+                y1 *= 2;
+
+                sourceX = GRoundToInt(x1 * fSourceBitmap.width());
+                sourceY = GRoundToInt(y1 * fSourceBitmap.height());
+            }
+
             // Clamp values
             sourceX = std::max(0, std::min(fSourceBitmap.width() - 1, sourceX));
             sourceY = std::max(0, std::min(fSourceBitmap.height() - 1, sourceY));
@@ -45,6 +78,7 @@ private:
     GBitmap fSourceBitmap;
     GMatrix fInverse;
     GMatrix fLocalMatrix;
+    TileMode fTile;
 };
 
 
@@ -53,5 +87,5 @@ std::unique_ptr<GShader> GCreateBitmapShader(const GBitmap& bitmap, const GMatri
         return nullptr;
     }
 
-    return std::unique_ptr<GShader>(new BitmapShader(bitmap, localInv));
+    return std::unique_ptr<GShader>(new BitmapShader(bitmap, localInv, tile));
 }
