@@ -94,6 +94,7 @@ public:
     Shape() {
         fGradPts[0] = { 10, 10 };
         fGradPts[1] = { 100, 80 };
+        fTileMode = GShader::kClamp;
     }
 
     virtual ~Shape() {}
@@ -130,6 +131,15 @@ public:
         this->drawGradientHilite(canvas);
     }
 
+    virtual bool handleSym(uint32_t sym) { return false; }
+
+    void toggleTileMode() {
+        fTileMode = GShader::TileMode((fTileMode + 1) % 3);
+        if (fGradient) {
+            this->rebuildGradient();
+        }
+    }
+
     void toggleGradient() {
         if (fGradient) {
             fGradient = nullptr;
@@ -158,7 +168,7 @@ public:
 
     void rebuildGradient() {
         fGradient = GCreateLinearGradient(fGradPts[0], fGradPts[1],
-                                          fColors.data(), fColors.size());
+                                          fColors.data(), fColors.size(), fTileMode);
     }
 
     virtual GClick* findClick(GPoint p, GWindow* wind) {
@@ -213,9 +223,13 @@ protected:
     GPoint fGradPts[2];
     std::vector<GColor> fColors;
     std::unique_ptr<GShader> fGradient;
+    GShader::TileMode fTileMode;
 };
 
 #include "draw_path.cpp"
+#include "draw_quad.cpp"
+#include "draw_cubic.cpp"
+#include "draw_oval.cpp"
 
 class RectShape : public Shape {
 public:
@@ -340,6 +354,15 @@ static Shape* cons_up_shape(unsigned index) {
     if (index == 4) {
         return new PolyShape({0.5, 1, 0, 0}, 1);
     }
+    if (index == 5) {
+        return new QuadShape;
+    }
+    if (index == 6) {
+        return new CubicShape;
+    }
+    if (index == 7) {
+        return new OvalShape;
+    }
     return nullptr;
 }
 
@@ -380,6 +403,11 @@ protected:
         }
 
         if (fShape) {
+            if (fShape->handleSym(sym)) {
+                this->updateTitle();
+                this->requestDraw();
+                return true;
+            }
             switch (sym) {
                 case SDLK_UP: {
                     int index = find_index(fList, fShape);
@@ -408,6 +436,10 @@ protected:
                     return true;
                 case 'l':
                     fShape->toggleGradient();
+                    this->requestDraw();
+                    return true;
+                case 't':
+                    fShape->toggleTileMode();
                     this->requestDraw();
                     return true;
                 default:

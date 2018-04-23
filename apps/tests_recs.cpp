@@ -297,6 +297,7 @@ static void test_matrix_map(GTestStats* stats) {
 
 #include "tests_pa4.cpp"
 #include "tests_pa5.cpp"
+#include "tests_pa6.cpp"
 
 const GTestRec gTestRecs[] = {
     { test_clear,       "clear"         },
@@ -316,6 +317,9 @@ const GTestRec gTestRecs[] = {
     { test_path_rect,   "path_rect",        },
     { test_path_rect,   "test_path_poly",   },
     { test_path_transform, "path_transform" },
+
+    { test_edger_quads, "test_edger_quads"  },
+    { test_path_circle, "test_path_circle"  },
 
     { nullptr, nullptr },
 };

@@ -18,6 +18,12 @@ class GMatrix;
  */
 class GShader {
 public:
+    enum TileMode {
+        kClamp,
+        kRepeat,
+        kMirror,
+    };
+
     virtual ~GShader() {}
 
     // Return true iff all of the GPixels that may be returned by this shader will be opaque.
@@ -38,7 +44,8 @@ public:
  *  Return a subclass of GShader that draws the specified bitmap and the inverse of a local matrix.
  *  Returns null if the either parameter is invalid.
  */
-std::unique_ptr<GShader> GCreateBitmapShader(const GBitmap&, const GMatrix& localInv);
+std::unique_ptr<GShader> GCreateBitmapShader(const GBitmap&, const GMatrix& localInv,
+                                             GShader::TileMode = GShader::kClamp);
 
 /**
  *  Return a subclass of GShader that draws the specified gradient of [count] colors between
@@ -51,12 +58,14 @@ std::unique_ptr<GShader> GCreateBitmapShader(const GBitmap&, const GMatrix& loca
  *  If count == 1, the returned shader just draws a single color everywhere.
  *  If count < 1, this should return nullptr.
  */
-std::unique_ptr<GShader> GCreateLinearGradient(GPoint p0, GPoint p1, const GColor[], int count);
+std::unique_ptr<GShader> GCreateLinearGradient(GPoint p0, GPoint p1, const GColor[], int count,
+                                               GShader::TileMode = GShader::kClamp);
 
 static inline std::unique_ptr<GShader> GCreateLinearGradient(GPoint p0, GPoint p1,
-                                                             const GColor& c0, const GColor& c1) {
+                                                             const GColor& c0, const GColor& c1,
+                                                     GShader::TileMode mode = GShader::kClamp) {
     const GColor colors[] = { c0, c1 };
-    return GCreateLinearGradient(p0, p1, colors, 2);
+    return GCreateLinearGradient(p0, p1, colors, 2, mode);
 }
 
 #endif

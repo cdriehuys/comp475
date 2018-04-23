@@ -35,6 +35,23 @@ GPath& GPath::lineTo(GPoint p) {
     return *this;
 }
 
+GPath& GPath::quadTo(GPoint p1, GPoint p2) {
+    GASSERT(fVbs.size() > 0);
+    fPts.push_back(p1);
+    fPts.push_back(p2);
+    fVbs.push_back(kQuad);
+    return *this;
+}
+
+GPath& GPath::cubicTo(GPoint p1, GPoint p2, GPoint p3) {
+    GASSERT(fVbs.size() > 0);
+    fPts.push_back(p1);
+    fPts.push_back(p2);
+    fPts.push_back(p3);
+    fVbs.push_back(kCubic);
+    return *this;
+}
+
 /////////////////////////////////////////////////////////////////
 
 GPath::Iter::Iter(const GPath& path) {
@@ -58,6 +75,17 @@ GPath::Verb GPath::Iter::next(GPoint pts[]) {
         case kLine:
             pts[0] = fCurrPt[-1];
             pts[1] = *fCurrPt++;
+            break;
+        case kQuad:
+            pts[0] = fCurrPt[-1];
+            pts[1] = *fCurrPt++;
+            pts[2] = *fCurrPt++;
+            break;
+        case kCubic:
+            pts[0] = fCurrPt[-1];
+            pts[1] = *fCurrPt++;
+            pts[2] = *fCurrPt++;
+            pts[3] = *fCurrPt++;
             break;
 #if 0
         case kClose:
@@ -96,9 +124,21 @@ GPath::Verb GPath::Edger::next(GPoint pts[]) {
             case kLine:
                 pts[0] = fCurrPt[-1];
                 pts[1] = *fCurrPt++;
-                do_return = true;
                 fPrevVerb = kLine;
-                break;
+                return kLine;
+            case kQuad:
+                pts[0] = fCurrPt[-1];
+                pts[1] = *fCurrPt++;
+                pts[2] = *fCurrPt++;
+                fPrevVerb = kQuad;
+                return kQuad;
+            case kCubic:
+                pts[0] = fCurrPt[-1];
+                pts[1] = *fCurrPt++;
+                pts[2] = *fCurrPt++;
+                pts[3] = *fCurrPt++;
+                fPrevVerb = kCubic;
+                return kCubic;
 #if 0
             case kClose:
                 if (fPrevVerb == kLine) {
@@ -116,7 +156,7 @@ GPath::Verb GPath::Edger::next(GPoint pts[]) {
             return kLine;
         }
     }
-    if (fPrevVerb == kLine) {
+    if (fPrevVerb >= kLine && fPrevVerb <= kCubic) {
         pts[0] = fCurrPt[-1];
         pts[1] = *fPrevMove;
         fPrevVerb = kDone;

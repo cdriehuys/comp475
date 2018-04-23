@@ -7,6 +7,8 @@
 
 #include "GMath.h"
 
+class GPoint;
+
 struct GVector {
     float fX;
     float fY;
@@ -23,10 +25,18 @@ struct GVector {
     GVector operator+(const GVector& v) const {
         return { fX + v.fX, fY + v.fY };
     }
-
-    GVector operator*(float s) const {
-        return { fX * s, fY * s };
+    GVector operator-(const GVector& v) const {
+        return { fX - v.fX, fY - v.fY };
     }
+
+    friend GVector operator*(GVector v, float s) {
+        return { v.fX * s, v.fY * s };
+    }
+    friend GVector operator*(float s, GVector v) {
+        return { v.fX * s, v.fY * s };
+    }
+
+    inline operator GPoint() const;
 };
 
 class GPoint {
@@ -66,7 +76,20 @@ public:
     GVector operator-(const GPoint& p) const {
         return { fX - p.fX, fY - p.fY };
     }
+
+    GPoint operator+(const GPoint& p) const {
+        return { fX + p.fX, fY + p.fY };
+    }
+
+    friend GPoint operator*(GPoint v, float s) {
+        return { v.fX * s, v.fY * s };
+    }
+    friend GPoint operator*(float s, GPoint v) {
+        return { v.fX * s, v.fY * s };
+    }
 };
+
+inline GVector::operator GPoint() const { return GPoint{ fX, fY }; }
 
 template <typename T> class GSize {
 public:

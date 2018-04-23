@@ -9,6 +9,7 @@
 #include "image_pa3.cpp"
 #include "image_pa4.cpp"
 #include "image_pa5.cpp"
+#include "image_pa6.cpp"
 
 const GDrawRec gDrawRecs[] = {
     { draw_solid_ramp,  256, 7*28,  "solid_ramp",   1   },
@@ -38,6 +39,13 @@ const GDrawRec gDrawRecs[] = {
     { draw_grad,        250, 200,   "grad",         5 },
     { draw_gradient_blendmodes, 450, 340, "gradient_blendmodes", 5 },
     { draw_graphs2,     256, 256,   "path_graphs",  5  },
+
+    { draw_quad_rotate, 300, 300,   "quad_clock",  6  },
+    { draw_cubics,      512, 512,    "cubic_fan",  6  },
+    { draw_rings,       512, 512,   "rings", 6 },
+    { draw_bm_tiling,   512, 512,   "bitmap_tiling", 6 },
+    { draw_cartman,     512, 512,   "cartman", 6 },
+    { draw_divided,     512, 512,   "divided", 6 },
 
     { nullptr, 0, 0, nullptr },
 };

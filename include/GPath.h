@@ -22,6 +22,16 @@ public:
     GPath& lineTo(GPoint);
     GPath& lineTo(float x, float y) { return this->lineTo({x, y}); }
 
+    GPath& quadTo(GPoint, GPoint);
+    GPath& quadTo(float x0, float y0, float x1, float y1) {
+        return this->quadTo({x0, y0}, {x1, y1});
+    }
+
+    GPath& cubicTo(GPoint, GPoint, GPoint);
+    GPath& cubicTo(float x0, float y0, float x1, float y1, float x2, float y2) {
+        return this->cubicTo({x0, y0}, {x1, y1}, {x2, y2});
+    }
+
     enum Direction {
         kCW_Direction,
         kCCW_Direction,
@@ -35,6 +45,8 @@ public:
 
     // moveTo(pts[0]), lineTo(pts[1..count-1])
     GPath& addPolygon(const GPoint pts[], int count);
+
+    GPath& addCircle(GPoint center, float radius, Direction = kCW_Direction);
 
     int countPoints() const { return (int)fPts.size(); }
 
@@ -52,8 +64,10 @@ public:
 
     enum Verb {
         kMove,  // returns pts[0] from Iter
-        kLine,  // returns pts[0]..pts[1] from Iter
-        kDone   // returns nothing in pts, Iter is done
+        kLine,  // returns pts[0]..pts[1] from Iter and Edger
+        kQuad,  // returns pts[0]..pts[2] from Iter and Edger
+        kCubic, // returns pts[0]..pts[3] from Iter and Edger
+        kDone   // returns nothing in pts, Iter/Edger is done
     };
 
     /**
@@ -98,6 +112,22 @@ public:
         const Verb*   fStopVb;
         Verb fPrevVerb;
     };
+
+    /**
+     *  Given 0 < t < 1, subdivide the src[] quadratic bezier at t into two new quadratics in dst[]
+     *  such that
+     *  0...t is stored in dst[0..2]
+     *  t...1 is stored in dst[2..4]
+     */
+    static void ChopQuadAt(const GPoint src[3], GPoint dst[5], float t);
+
+    /**
+     *  Given 0 < t < 1, subdivide the src[] cubic bezier at t into two new cubics in dst[]
+     *  such that
+     *  0...t is stored in dst[0..3]
+     *  t...1 is stored in dst[3..6]
+     */
+    static void ChopCubicAt(const GPoint src[4], GPoint dst[7], float t);
 
 private:
     std::vector<GPoint> fPts;

@@ -21,8 +21,8 @@ bench : $(G_SRC) apps/bench* apps/GTime.cpp
 	$(CC_RELEASE) $(G_INC) $(G_SRC) apps/GTime.cpp apps/bench.cpp apps/bench_recs.cpp -lpng -o bench
 
 DRAW_SRC = apps/draw.cpp apps/GWindow.cpp apps/GTime.cpp
-draw: $(DRAW_SRC) $(G_SRC)
-	$(CC_RELEASE) $(G_INC) $(G_SRC) $(DRAW_SRC) -lpng -lSDL2 -o draw
+draw: $(DRAW_SRC) $(G_SRC) apps/draw*.cpp
+	$(CC_DEBUG) $(G_INC) $(G_SRC) $(DRAW_SRC) -lpng -lSDL2 -o draw
 
 PAINT_SRC = apps/paint.cpp apps/GWindow.cpp apps/GTime.cpp
 paint: $(PAINT_SRC) $(G_SRC)
