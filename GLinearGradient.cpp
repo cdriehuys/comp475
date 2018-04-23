@@ -12,10 +12,11 @@
 
 class GLinearGradient : public GShader {
 public:
-    GLinearGradient(GPoint p0, GPoint p1, const GColor colors[], int count) {
+    GLinearGradient(GPoint p0, GPoint p1, const GColor colors[], int count, TileMode tile) {
         fColors = (GColor*) malloc(count * sizeof(GColor));
         memcpy(fColors, colors, count * sizeof(GColor));
         fColorCount = count;
+        fTile = tile;
 
         if (p0.fX > p1.fX) {
             std::swap(p0, p1);
@@ -46,7 +47,21 @@ public:
     void shadeRow(int x, int y, int count, GPixel row[]) override {
         for (int i = 0; i < count; ++i) {
             GPoint point = fLocalMatrix.mapXY(x + i, y);
-            float t = clamp(point.fX, 0.0f, 1.0f);
+
+            float t = point.fX;
+
+            if (fTile == TileMode::kRepeat) {
+                t = t - floor(t);
+            } else if (fTile == TileMode::kMirror) {
+                t *= 0.5;
+                t = t - floor(t);
+                if (t > .5) {
+                    t = 1 - t;
+                }
+                t *= 2;
+            }
+
+            t = clamp(t, 0.0f, 1.0f);
 
             if (t == 0) {
                 row[i] = colorToPixel(fColors[0].pinToUnit());
@@ -79,6 +94,8 @@ private:
     GMatrix fLocalMatrix;
     GMatrix fUnitMatrix;
 
+    TileMode fTile;
+
     int fColorCount;
 };
 
@@ -93,5 +110,5 @@ std::unique_ptr<GShader> GCreateLinearGradient(
         return nullptr;
     }
 
-    return std::unique_ptr<GShader>(new GLinearGradient(p0, p1, colors, count));
+    return std::unique_ptr<GShader>(new GLinearGradient(p0, p1, colors, count, tile));
 }
