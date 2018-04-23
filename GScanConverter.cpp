@@ -83,31 +83,17 @@ void resortBackwards(Edge* edge, std::vector<Edge*>& edges) {
 }
 
 
-void printEdge(Edge& e) {
-    float x0 = e.curX;
-    float y0 = e.topY;
-    float y1 = e.bottomY;
-    float x1 = x0 + (y1 - y0) * e.dxdy;
-
-    std::cout << "Edge:\n";
-    std::cout << "  Winding: " << e.wind << "\n";
-    std::cout << "  Coordinates: (" << x0 << ", " << y0 << ") to (" << x1 << ", " << y1 << ")\n";
-
-}
-
-
 // Note that unlike the simple scan converter, this one is "destructive"
 // because it manipulates each edge's 'curX' property. This is unlikely to
 // matter since we don't do anything with the edges after drawing them.
 void GScanConverter::scanComplex(Edge* edges, int count, GBlitter& blitter) {
-    // GASSERT(count >= 2);
+    GASSERT(count >= 2);
 
     std::sort(edges, edges + count);
 
     std::vector<Edge*> edgeVec;
     for (int i = 0; i < count; ++i) {
         edgeVec.push_back(&edges[i]);
-        // printEdge(edges[i]);
     }
 
     int minY = edgeVec.front()->topY;
@@ -118,9 +104,9 @@ void GScanConverter::scanComplex(Edge* edges, int count, GBlitter& blitter) {
         Edge* edge = edgeVec.front();
         Edge* next;
 
-        int x0 = 0, x1 = 0;
+        int x0, x1;
 
-        while (edge->topY <= y) {
+        while (edge != nullptr && edge->topY <= y) {
             if (wind == 0) {
                 x0 = GRoundToInt(edge->curX);
             }
@@ -129,17 +115,15 @@ void GScanConverter::scanComplex(Edge* edges, int count, GBlitter& blitter) {
 
             if (wind == 0) {
                 x1 = GRoundToInt(edge->curX);
-                if (x0 > x1) {
-                    std::swap(x0, x1);
-                }
                 blitter.blitRow(y, x0, x1);
             }
 
             int nextIndex = getEdgeIndex(edge, edgeVec) + 1;
             if (nextIndex >= edgeVec.size()) {
-                break;
+                next = nullptr;
+            } else {
+                next = edgeVec[nextIndex];
             }
-            next = edgeVec[nextIndex];
 
             if (edge->bottomY == y + 1) {
                 edgeVec.erase(edgeVec.begin() + getEdgeIndex(edge, edgeVec));
@@ -153,12 +137,14 @@ void GScanConverter::scanComplex(Edge* edges, int count, GBlitter& blitter) {
 
         y++;
 
-        while (edge->topY == y) {
+        while (edge != nullptr && edge->topY == y) {
             int nextIndex = getEdgeIndex(edge, edgeVec) + 1;
             if (nextIndex >= edgeVec.size()) {
-                break;
+                next = nullptr;
+            } else {
+                next = edgeVec[nextIndex];
             }
-            next = edgeVec[nextIndex];
+
             resortBackwards(edge, edgeVec);
             edge = next;
         }
