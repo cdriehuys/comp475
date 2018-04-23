@@ -39,7 +39,7 @@ public:
     }
 
     bool setContext(const GMatrix& ctm) override {
-        fLocalMatrix.setConcat(fUnitMatrix, ctm);
+        fLocalMatrix.setConcat(ctm, fUnitMatrix);
 
         return fLocalMatrix.invert(&fLocalMatrix);
     }
