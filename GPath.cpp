@@ -8,20 +8,20 @@
 
 void GPath::ChopCubicAt(const GPoint src[4], GPoint dst[7], float t) {
     dst[0] = src[0];
-    dst[1] = src[1];
-    dst[2] = src[2];
-    dst[3] = src[3];
-    dst[4] = src[3];
-    dst[5] = src[3];
+    dst[1] = GPoint::Make((src[0].x() + src[1].x()) / 2, (src[0].y() + src[1].y()) / 2);
+    dst[2] = src[1];
+    dst[3] = GPoint::Make((src[1].x() + src[2].x()) / 2, (src[1].y() + src[2].y()) / 2);
+    dst[4] = src[2];
+    dst[5] = GPoint::Make((src[2].x() + src[3].x()) / 2, (src[2].y() + src[3].y()) / 2);
     dst[6] = src[3];
 }
 
 
 void GPath::ChopQuadAt(const GPoint src[3], GPoint dst[5], float t) {
     dst[0] = src[0];
-    dst[1] = src[1];
-    dst[2] = src[2];
-    dst[3] = src[2];
+    dst[1] = GPoint::Make((src[0].x() + src[1].x()) / 2, (src[0].y() + src[1].y()) / 2);
+    dst[2] = src[1];
+    dst[3] = GPoint::Make((src[1].x() + src[2].x()) / 2, (src[1].y() + src[2].y()) / 2);
     dst[4] = src[2];
 }
 
