@@ -10,6 +10,7 @@
 #include "GPath.h"
 #include "GPixel.h"
 #include "GPoint.h"
+#include "GRadialGradient.h"
 #include "GRect.h"
 #include "GScanConverter.h"
 #include "GShader.h"
@@ -166,6 +167,14 @@ public:
         };
 
         drawConvexPolygon(points, 4, paint);
+    }
+
+    std::unique_ptr<GShader> final_createRadialGradient(GPoint center, float radius, const GColor colors[], int count) override {
+        if (count < 2) {
+            return nullptr;
+        }
+
+        return std::unique_ptr<GShader>(new GRadialGradient(center, radius, colors, count));
     }
 
     void onSaveLayer(const GRect* boundsPtr, const GPaint& paint) override {
