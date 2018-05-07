@@ -10,6 +10,7 @@
 #include "image_pa4.cpp"
 #include "image_pa5.cpp"
 #include "image_pa6.cpp"
+#include "image_final.cpp"
 
 const GDrawRec gDrawRecs[] = {
     { draw_solid_ramp,  256, 7*28,  "solid_ramp",   1   },
@@ -46,6 +47,10 @@ const GDrawRec gDrawRecs[] = {
     { draw_bm_tiling,   512, 512,   "bitmap_tiling", 6 },
     { draw_cartman,     512, 512,   "cartman", 6 },
     { draw_divided,     512, 512,   "divided", 6 },
+
+    { final_radial,     512, 512,   "final_radial", 7 },
+    { final_stroke,     512, 512,   "final_stroke", 7 },
+    { final_triangle,   512, 512,   "final_triangle", 7 },
 
     { nullptr, 0, 0, nullptr },
 };

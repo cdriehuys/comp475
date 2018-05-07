@@ -72,7 +72,7 @@ static double compare(const GBitmap& a, const GBitmap& b, int tolerance, bool ve
     GASSERT(score >= 0 && score <= 1);
     score *= score;
     if (verbose) {
-        printf("    - score %d, max_diff %d total %d %d\n", (int)(score * 100), max_diff, total_diff, total);
+        printf("    - score %d, max_diff %d\n", (int)(score * 100), max_diff);
     }
     return score;
 }
@@ -157,6 +157,7 @@ static void add_diff_to_file(FILE* f, const GBitmap& test, const GBitmap& orig, 
 }
 
 static int gPACounts[10] = { 0,0,0,0,0,0,0,0,0,0 };
+static int gDrawCount;
 
 int main(int argc, char** argv) {
     bool verbose = false;
@@ -170,11 +171,13 @@ int main(int argc, char** argv) {
     FILE* reportFile = NULL;
     FILE* diffFile = NULL;
     int tolerance = 0;
-    int targetPA = -1;
+    int targetPA = 7;
+    int oneShot = -1;
 
     for (int i = 0; gDrawRecs[i].fDraw; ++i) {
         GASSERT((unsigned)gDrawRecs[i].fPA < GARRAY_COUNT(gPACounts));
         gPACounts[gDrawRecs[i].fPA] += 1;
+        gDrawCount += 1;
     }
 
     for (int i = 1; i < argc; ++i) {
@@ -188,6 +191,9 @@ int main(int argc, char** argv) {
             }
         } else if (is_arg(argv[i], "verbose")) {
             verbose = true;
+        } else if (is_arg(argv[i], "oneshot") && i+1 < argc) {
+            oneShot = atoi(argv[++i]);
+            GASSERT(oneShot >= 0 && oneShot < gDrawCount);
         } else if (is_arg(argv[i], "write") && i+1 < argc) {
             root = argv[++i];
         } else if (is_arg(argv[i], "match") && i+1 < argc) {
@@ -226,17 +232,24 @@ int main(int argc, char** argv) {
         printf("--match %s\n", match);
         printf("--expected %s\n", expected);
         printf("--tolerance %d\n", tolerance);
+        if (scoreFile) {
+            printf("--scoreFile %s\n", scoreFile);
+        }
     }
-    
+
+    // For the final, they only need to complete two (perfectly) to reach a score of 100.
+    const double total_count_needed = 2;
+
+    double max_score = (1 << gDrawRecs[gDrawCount - 1].fPA) - 1;
+
     double percent_correct = 0;
     double counter = 0;
     for (int i = 0; gDrawRecs[i].fDraw; ++i) {
         if (targetPA > 0 && targetPA != gDrawRecs[i].fPA) {
             continue;
         }
-        double weight = 1 << (gDrawRecs[i].fPA - 1);
-        weight /= gPACounts[gDrawRecs[i].fPA];
 
+        double weight = 1;
         counter += weight;
 
         std::string path(root);
@@ -246,8 +259,11 @@ int main(int argc, char** argv) {
         if (match && !strstr(path.c_str(), match)) {
             continue;
         }
+        if (oneShot >= 0 && oneShot != i) {
+            continue;
+        }
         if (verbose) {
-            printf("image: %s\n", path.c_str());
+            printf("image: index=%2d pa=%d %s\n", i, gDrawRecs[i].fPA, path.c_str());
         }
         
         GBitmap testBM;
@@ -267,7 +283,27 @@ int main(int argc, char** argv) {
                 if (correct < 1 && diffFile != NULL) {
                     add_diff_to_file(diffFile, testBM, expectedBM, diffDir, gDrawRecs[i].fName);
                 }
-                percent_correct += correct * weight;
+                double individual_score = correct * weight;
+
+                percent_correct += individual_score;
+
+                if (oneShot == i) {
+                    individual_score = individual_score * 100 / max_score;
+                    if (verbose) {
+                        printf("[%d] score=%g %s\n", i, individual_score, path.c_str());
+                    }
+                    if (scoreFile) {
+                        FILE* f = fopen(scoreFile, "w");
+                        if (f) {
+                            fprintf(f, "%g\n", individual_score);
+                            fclose(f);
+                            return 0;
+                        } else {
+                            printf("FAILED TO WRITE TO %s\n", scoreFile);
+                            return -1;
+                        }
+                    }
+                }
             }
         }
         
@@ -277,8 +313,8 @@ int main(int argc, char** argv) {
         fclose(diffFile);
     }
 
-    int image_score = (int)(percent_correct * 100 / counter);
-    if (expected) {
+    int image_score = (int)(percent_correct * 100 / total_count_needed);
+    if (expected && (oneShot < 0)) {
         printf("           image: %d\n", image_score);
     }
     if (reportFile) {

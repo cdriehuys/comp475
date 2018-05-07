@@ -9,7 +9,7 @@ G_SRC = src/*.cpp *.cpp
 #
 G_INC = -Iinclude -Iapps -I/usr/local/include -L/usr/local/lib
 
-all: image tests bench
+all: image
 
 image : $(G_SRC) apps/image*
 	$(CC_DEBUG) $(G_INC) $(G_SRC) apps/image.cpp apps/image_recs.cpp -lpng -o image

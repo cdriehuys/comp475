@@ -17,6 +17,54 @@ class GCanvas {
 public:
     virtual ~GCanvas() {}
 
+    //////////// Beginning of Final methods
+
+    /**
+     *  Return a radial-gradient shader.
+     *
+     *  This is a shader defined by a circle with center point (cx, cy) and a radius.
+     *  It supports an array colors (count >= 2) where
+     *      color[0]       is the color at the center
+     *      color[count-1] is the color at the outer edge of the circle
+     *      the other colors (if any) are evenly distributed along the radius
+     *
+     *  e.g. If there are 4 colors and a radius of 90 ...
+     *
+     *      color[0] is at the center
+     *      color[1] is at a distance of 30 from the center
+     *      color[2] is at a distance of 60 from the center
+     *      color[3] is at a distance of 90 from the center
+     *
+     *  Positions outside of the radius are clamped to color[count - 1].
+     *  Positions inside the radius are linearly interpolated between the two nearest colors.
+     *
+     *  Interpolation occurs between GColors, and then it is premultiplied to a GPixel.
+     */
+    virtual std::unique_ptr<GShader> final_createRadialGradient(GPoint center, float radius,
+                                                                const GColor colors[], int count);
+
+    /**
+     *  Add contour(s) to the specified path that will draw a line from p0 to p1 with the specified
+     *  width. Note that "width" is the distance from one side of the stroke to the other.
+     *
+     *  If roundCap is true, the path should also include a circular cap at each end of the line,
+     *  where the circle has radius of width/2 and its center is positioned at p0 and p1.
+     */
+    virtual void final_addStrokedLine(GPath* path, GPoint p0, GPoint p1, float width, bool roundCap);
+
+    /**
+     *  Return a subclass of GShader that implements a triangle-gradient. This linearly
+     *  interpolates the colors at each vertex across the interior of the triangle.
+     *
+     *  Each vertex (pts[i]) has an associated color (colors[i]).
+     *
+     *  Interpolation occurs between GColors, and then it is premultiplied to a GPixel.
+     */
+    virtual std::unique_ptr<GShader> final_createTriangleGradient(const GPoint pts[3],
+                                                                  const GColor colors[3]);
+
+    //////////// End of Final methods
+
     /**
      *  Save off a copy of the canvas state (CTM), to be later used if the balancing call to
      *  restore() is made. Calls to save/restore can be nested:
