@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stack>
 
 #include "GBitmap.h"
@@ -167,6 +168,23 @@ public:
         };
 
         drawConvexPolygon(points, 4, paint);
+    }
+
+    void final_addStrokedLine(GPath* path, GPoint p0, GPoint p1, float width, bool roundCap) {
+        float slope = (p1.fY - p0.fY) / (p1.fX - p0.fX);
+        float perp = 1 / -slope;
+
+        float corner_angle = atan(perp);
+
+        float corner_dx = cos(corner_angle) * width / 2;
+        float corner_dy = sin(corner_angle) * width / 2;
+
+        GPoint c0 = GPoint::Make(p0.fX + corner_dx, p0.fY + corner_dy);
+        GPoint c1 = GPoint::Make(p0.fX - corner_dx, p0.fY - corner_dy);
+        GPoint c2 = GPoint::Make(p1.fX - corner_dx, p1.fY - corner_dy);
+        GPoint c3 = GPoint::Make(p1.fX + corner_dx, p1.fY + corner_dy);
+
+        path->moveTo(c0).lineTo(c1).lineTo(c2).lineTo(c3);
     }
 
     std::unique_ptr<GShader> final_createRadialGradient(GPoint center, float radius, const GColor colors[], int count) override {
